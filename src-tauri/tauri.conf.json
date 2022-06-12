@@ -35,7 +35,7 @@
         "icons/icon.ico"
       ],
       "identifier": "com.clickovski.app",
-      "longDescription": "A small application to automate keyboard and mouse",
+      "longDescription": "A small application to automate keyboard and mouse inputs",
       "macOS": {
         "entitlements": null,
         "exceptionDomain": "",

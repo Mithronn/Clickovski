@@ -97,11 +97,25 @@ function App(props) {
         const shortcutActivationListen = listen("activate_shortcuts", () => {
             store.dispatch(setGlobalShortcutActive(true));
             // console.log(store.getState(""));
-        })
+        });
+
+        let contextMenuListener = (event) => {
+            // alert("You've tried to open context menu"); //here you draw your own menu
+            event.preventDefault();
+            return false;
+        }
+
+        window.document.addEventListener(
+            "contextmenu",
+            contextMenuListener,
+            { capture: true }
+        );
 
         return () => {
             shortcutActivationListen.then((f) => f());
             routeSettingsListen.then((f) => f());
+
+            window.document.removeEventListener("contextmenu", contextMenuListener);
         }
     }, [])
 
