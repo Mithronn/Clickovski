@@ -59,7 +59,7 @@
       "active": true,
       "dialog": false,
       "endpoints": [
-        "https://gist.githubusercontent.com/Mithronn/0622529ec8af6e4d137086e6134fb526/raw/bcb2cebc99487998987ba7b6cda56fa76d5e9886/clickovski_releases.txt"
+        "https://gist.githubusercontent.com/Mithronn/0622529ec8af6e4d137086e6134fb526/raw"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVFNUFBRjhCQUEwQTdBMDIKUldRQ2VncXFpNjlhN25rZjNkajAxMXgzRlJkNW9ndzAzM3k4OWxhWjlyUnZTbGlVYmhuWXA2dysK"
     },
