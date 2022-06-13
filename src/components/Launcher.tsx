@@ -186,7 +186,7 @@ function Launcher() {
                 <button
                     onClick={reduxState.isStarted ? stop : start}
                     className="outline-none focus:outline-none pl-4 pr-4 pt-2 pb-2 min-w-[100px] flex items-center justify-center rounded-md bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 text-gray-200 font-Readex duration-150">
-                    {reduxState.isStarted ? `${t('stop', { keys: String(reduxState.isGlobalShortcut).split("+").map((value) => value.slice(0, 4)).join(" + ") })}` : `${t('start', { keys: String(reduxState.isGlobalShortcut).split("+").map((value) => value.slice(0, 4)).join(" + ") })}`}
+                    {reduxState.isStarted ? `${t('stop', { keys: reduxState.isGlobalShortcut && String("(" + String(reduxState.isGlobalShortcut).split("+").map((value) => value.slice(0, 4)).join(" + ") + ")") })}` : `${t('start', { keys: reduxState.isGlobalShortcut && String("(" + String(reduxState.isGlobalShortcut).split("+").map((value) => value.slice(0, 4)).join(" + ") + ")") })}`}
                 </button>
             </div>
 

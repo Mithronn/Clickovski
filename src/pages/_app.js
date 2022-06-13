@@ -56,12 +56,14 @@ function App(props) {
         }
 
         // Notification permission request
-        window.__TAURI__.notification.isPermissionGranted().then(res => {
-            // console.log(res);
-            if (!res) {
-                window.__TAURI__.notification.requestPermission();
-            }
-        })
+        if (router.pathname !== "/update") {
+            window.__TAURI__.notification.isPermissionGranted().then(res => {
+                // console.log(res);
+                if (!res) {
+                    window.__TAURI__.notification.requestPermission();
+                }
+            })
+        }
 
         localforage.getItem("settings").then(async (res) => {
             if (!res) {
@@ -77,6 +79,18 @@ function App(props) {
                 // not registered yet
                 window.__TAURI__.globalShortcut.register(globalShortcut, (globalShortcut1) => {
                     window.__TAURI__.invoke("start_stop_global_shortcut_pressed", { invokeMessage: true });
+                }).catch((err) => {
+                    window.__TAURI__.globalShortcut.unregister(globalShortcut).then(res2 => {
+                        window.__TAURI__.globalShortcut.register(globalShortcut, (globalShortcut2) => {
+                            window.__TAURI__.invoke("start_stop_global_shortcut_pressed", { invokeMessage: true });
+                        }).catch(err => {
+                            store.dispatch(setGlobalShortcut(null));
+                            localforage.setItem("settings", JSON.stringify(res ? { ...JSON.parse(res), isShortcut: null } : { ...defaultStoreData, isShortcut: null }));
+                        })
+                    }).catch(err => {
+                        store.dispatch(setGlobalShortcut(null));
+                        localforage.setItem("settings", JSON.stringify(res ? { ...JSON.parse(res), isShortcut: null } : { ...defaultStoreData, isShortcut: null }));
+                    })
                 });
             })
 

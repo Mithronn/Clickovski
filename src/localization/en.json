@@ -1,7 +1,7 @@
 {
     "translation": {
-        "start": "Start ({{keys}})",
-        "stop": "Stop ({{keys}})",
+        "start": "Start {{keys}}",
+        "stop": "Stop {{keys}}",
         "click_with_timer": "Click with timer",
         "millis": "Milliseconds",
         "second": "Second",

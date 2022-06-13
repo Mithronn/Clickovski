@@ -1,7 +1,7 @@
 {
     "translation": {
-        "start": "Başlat ({{keys}})",
-        "stop": "Durdur ({{keys}})",
+        "start": "Başlat {{keys}}",
+        "stop": "Durdur {{keys}}",
         "click_with_timer": "Tıklama gecikmesi",
         "millis": "Milisaniye",
         "second": "Saniye",

@@ -52,7 +52,7 @@ impl StateCore {
         self.state_change(true);
 
         if *self.mode.borrow() == "withTimer" {
-            println!("{:?}", Key::Raw(0x38));
+            // println!("{:?}", Key::Raw(0x38));
             self.setInterval(&self.delay_for_notifications.borrow().parse().unwrap());
         } else if *self.mode.borrow() == "withToggle" {
             // let engine_mutex = self.enigo_engine.borrow().clone().lock().unwrap();
