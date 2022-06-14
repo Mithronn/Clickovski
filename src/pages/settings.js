@@ -100,7 +100,21 @@ function Settings(props) {
             } else {
                 setDarkMode(false);
             }
-            setActivatedSettings(array);
+
+            // set startup state to local state
+            window.__TAURI__.invoke("plugin:autostart|is_enabled").then((enabledState) => { // tauri plugin function
+                if (enabledState && !array.find(x => x === "isStartUp")) {
+                    array.push("isStartUp");
+                }
+
+                if (!enabledState && array.find(x => x === "isStartUp")) {
+                    array = array.filter(x => x !== "isStartUp");
+                }
+
+                setActivatedSettings(array);
+            }).catch(error => {
+                setActivatedSettings(array);
+            })
         }).catch(() => {
             let datas = defaultStoreData;
         });

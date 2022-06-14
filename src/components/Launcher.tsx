@@ -15,11 +15,13 @@ function Launcher() {
     const { t, i18n } = useTranslation();
 
     const router = useRouter();
-    const [isVersionShow, setVersionShow] = React.useState(false);
-    const [isVersion, setVersion] = React.useState("");
     const reduxState = useSelector((state: any) => state);
     const theme = useTheme(reduxState);
     const dispatch = useDispatch();
+
+    const [isVersionShow, setVersionShow] = React.useState(false);
+    const [isVersion, setVersion] = React.useState("");
+    const [isGlobalShortcutActive, setGlobalShortcutActive] = React.useState(false);
 
     React.useEffect(() => {
         window.__TAURI__.app.getVersion().then((version) => {
@@ -32,21 +34,37 @@ function Launcher() {
             EventEmitter.emit("start_stop_event_FtoF", event.payload);
         };
 
-        const LauncherStartStop = (data) => {
-            if (!data.isRunning) {
-                start(data.isMode, data.isDelay);
-            } else {
-                stop(data.isMode);
-            }
+        const changeGlobalShortcutState = (data) => {
+            setGlobalShortcutActive(data);
         }
 
         const watchShortcutStartStopListen = listen("start_stop_event", handlewatchShortcutStartStopListen);
-        const FtoFListener = EventEmitter.addListener("start_stop_event_FtoF", LauncherStartStop);
+        const listenGlobalShortcutAction = EventEmitter.addListener("change_global_shortcut_state", changeGlobalShortcutState);
         return () => {
             watchShortcutStartStopListen.then((f) => f());
-            FtoFListener.remove();
+            listenGlobalShortcutAction.remove();
         }
     }, []);
+
+    React.useEffect(() => {
+        const LauncherStartStop = (data, IGA) => {
+            // console.log(IGA);
+            if (IGA) {
+                if (!data.isRunning) {
+                    start(data.isMode, data.isDelay);
+                } else {
+                    stop(data.isMode);
+                }
+            }
+        }
+        const FtoFListener = EventEmitter.addListener("start_stop_event_FtoF", (event) => {
+            LauncherStartStop(event, reduxState.isGlobalShortcutActive);
+        });
+
+        return () => {
+            FtoFListener.remove();
+        }
+    }, [reduxState.isGlobalShortcutActive]);
 
     //Global shortcut watcher
     React.useEffect(() => {

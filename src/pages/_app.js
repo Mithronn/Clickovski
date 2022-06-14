@@ -14,6 +14,7 @@ import '../styles/globals.css';
 import { defaultStoreData } from "../lib/constants";
 import i18n from '../components/i18n'
 import { setGlobalShortcutActive, setGlobalShortcut, } from '../redux/actions';
+import EventEmitter from "../utils/EventEmitter";
 
 function SafeHydrate({ children }) {
     return (
@@ -110,7 +111,7 @@ function App(props) {
         const routeSettingsListen = listen("routeSettings", routeSettings);
         const shortcutActivationListen = listen("activate_shortcuts", () => {
             store.dispatch(setGlobalShortcutActive(true));
-            // console.log(store.getState(""));
+            EventEmitter.emit("change_global_shortcut_state", true);
         });
 
         let contextMenuListener = (event) => {
