@@ -104,11 +104,11 @@ function Launcher() {
 
         if (isDelay) {
             if (isDelay <= 0) {
-                return dispatch(setErrorMessage(t('delay_error')));
+                return dispatch(setErrorMessage('delay_error'));
             }
         } else {
             if (Number(reduxState.isDelay) <= 0) {
-                return dispatch(setErrorMessage(t('delay_error')));
+                return dispatch(setErrorMessage('delay_error'));
             }
         }
 
@@ -198,7 +198,7 @@ function Launcher() {
 
     return (
         <div
-            className={`h-16 border-t-2 border-[rgba(0,0,0,0.05)] relative p-6 flex flex-row items-center justify-between shadow-inner ${theme ? "bg-darkestgray" : "bg-white"} duration-150`}
+            className={`h-16 border-t-2 border-[rgba(0,0,0,0.05)] relative p-6 flex flex-row items-center justify-between shadow-inner ${theme ? "bg-darkestgray" : "bg-gray-200"} duration-150`}
         >
             <div className="absolute -top-5 left-1/2 -translate-x-1/2">
                 <button
@@ -212,7 +212,7 @@ function Launcher() {
 
             <div
                 className="flex items-center justify-center w-1/2 h-1 absolute left-1/2 top-2/3 -translate-y-2/3 -translate-x-1/2">
-                <p className="text-red-500 font-Readex text-xs text-center break-words">{reduxState.isErrorMessage}</p>
+                <p className="text-red-500 font-Readex text-xs text-center break-words">{t(reduxState.isErrorMessage)}</p>
             </div>
 
             <AnimatePresence>

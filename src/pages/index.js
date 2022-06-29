@@ -164,7 +164,7 @@ const Home = () => {
 
   return (
     <div
-      className={`max-h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] flex flex-col p-6 pb-6 ${theme ? "bg-darkgray" : "bg-white"} duration-150 overflow-x-hidden overflow-y-auto ${!theme ? `${styles.styledScrollbar}` : `${styles.styledScrollbar2}`}`}
+      className={`max-h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] flex flex-col p-6 pb-6 ${theme ? "bg-darkgray" : "bg-white"} duration-150 overflow-x-hidden overflow-y-auto ${!theme ? `${styles.styledScrollbar} ${styles.backgroundImage}` : `${styles.styledScrollbar2} ${styles.backgroundImage2}`}`}
     >
       <Head>
         <title>Clickovski</title>
@@ -307,7 +307,7 @@ const Home = () => {
                       dispatch(setDelay(e.target.value));
                     }
                   }}
-                  className={`${reduxState.isStarted ? "cursor-not-allowed" : "cursor-text"} outline-none focus:outline-none rounded-md pl-2 pt-1 pb-1 font-Readex ${theme ? "text-white bg-darkestgray shadow-xl" : "text-black bg-gray-200 shadow"} duration-150`}
+                  className={`${reduxState.isStarted ? "cursor-not-allowed" : "cursor-text"} ${styles.number_input} appearance-none outline-none focus:outline-none rounded-md pl-2 pt-1 pb-1 font-Readex ${theme ? "text-white bg-darkestgray shadow-xl" : "text-black bg-gray-200 shadow"} duration-150`}
                 />
                 <p className={`font-Readex text-sm select-none ${theme ? "text-white" : "text-black"} duration-150`}>{t('millis')} <a className={`${theme ? "text-gray-400" : "text-gray-900"} duration-150`}>(1 {t('second').toLowerCase()} = 1000 ms)</a></p>
               </div>

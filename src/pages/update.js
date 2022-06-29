@@ -62,7 +62,7 @@ function Update(props) {
                     await installUpdate();
 
                     // install complete, restart the app
-                    relaunch();
+                    await relaunch();
                 }
             } catch (error) {
                 console.log(error);

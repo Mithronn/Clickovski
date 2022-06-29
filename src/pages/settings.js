@@ -119,7 +119,7 @@ function Settings(props) {
             let datas = defaultStoreData;
         });
 
-        window.__TAURI__.window.appWindow.setTitle("Clickovski - Settings");
+        window.__TAURI__.window.appWindow.setTitle(`Clickovski - ${t('settings')}`);
     }, [])
 
     // Global Shortcuts functions
@@ -192,7 +192,7 @@ function Settings(props) {
     }
 
     return (
-        <div className={`max-h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] p-6 pb-12 overflow-hidden ${isDarkMode ? "bg-darkgray" : "bg-white"} duration-150 overflow-x-hidden overflow-y-auto ${!isDarkMode ? `${styles.styledScrollbar}` : `${styles.styledScrollbar2}`}`}>
+        <div className={`max-h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] p-6 pb-12 overflow-hidden ${isDarkMode ? "bg-darkgray" : "bg-white"} duration-150 overflow-x-hidden overflow-y-auto ${!isDarkMode ? `${styles.styledScrollbar} ${styles.backgroundImage}` : `${styles.styledScrollbar2} ${styles.backgroundImage2}`}`}>
             <Head>
                 <title>Clickovski - {t('settings')}</title>
             </Head>

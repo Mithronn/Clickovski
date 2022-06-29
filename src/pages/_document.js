@@ -50,52 +50,6 @@ export default class MyDocument extends Document {
                     {this.props.emotionStyleTags}
                 </Head>
                 <body className="overflow-hidden">
-                    {/* {this.props.__NEXT_DATA__.page === "/update" &&
-                        <>
-                            <style jsx>{`
-                                .titlebar {
-                                height: 30px;
-                                background: #329ea3;
-                                user-select: none;
-                                justify-content: flex-end;
-                                display: none;
-                                position: fixed;
-                                top: 0;
-                                left: 0;
-                                right: 0;
-                                }
-                                .titlebar-button {
-                                display: inline-flex;
-                                justify-content: center;
-                                align-items: center;
-                                width: 30px;
-                                height: 30px;
-                                }
-                                .titlebar-button:hover {
-                                background: #5bbec3;
-                                }
-                                `}
-                            </style>
-
-                            <div data-tauri-drag-region className="titlebar">
-                                <div className="titlebar-button" id="titlebar-minimize">
-                                    <img
-                                        src="https://api.iconify.design/mdi:window-minimize.svg"
-                                        alt="minimize"
-                                    />
-                                </div>
-                                <div className="titlebar-button" id="titlebar-maximize">
-                                    <img
-                                        src="https://api.iconify.design/mdi:window-maximize.svg"
-                                        alt="maximize"
-                                    />
-                                </div>
-                                <div className="titlebar-button" id="titlebar-close">
-                                    <img src="https://api.iconify.design/mdi:close.svg" alt="close" />
-                                </div>
-                            </div>
-                        </>
-                    } */}
                     <Main />
                     <NextScript />
                 </body>
