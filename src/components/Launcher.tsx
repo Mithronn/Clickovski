@@ -3,13 +3,16 @@ import { useRouter } from 'next/router'
 const { motion, AnimatePresence } = require('framer-motion');
 import { useDispatch, useSelector } from 'react-redux'
 import { emit, listen } from '@tauri-apps/api/event'
+import { register, unregister, unregisterAll } from '@tauri-apps/api/globalShortcut'
+import { invoke } from '@tauri-apps/api/tauri'
 import { getI18n, useTranslation } from 'react-i18next'
 import localforage from 'localforage';
 
-import { startLauncher, stopLauncher, setStarting, setErrorMessage } from '../redux/actions';
+import { startLauncher, stopLauncher, setStarting, setErrorMessage, setGlobalShortcut } from '../redux/actions';
 import { transition } from "../lib/constants.js";
 import useTheme from '../components/useTheme';
-import EventEmitter from "../utils/EventEmitter";
+import { defaultStoreData } from "../lib/constants";
+
 
 function Launcher() {
     const { t, i18n } = useTranslation();
@@ -21,7 +24,7 @@ function Launcher() {
 
     const [isVersionShow, setVersionShow] = React.useState(false);
     const [isVersion, setVersion] = React.useState("");
-    const [isGlobalShortcutActive, setGlobalShortcutActive] = React.useState(false);
+    const [isGlobalShortcutRegistered, setGlobalShortcutRegistered] = React.useState(false);
 
     React.useEffect(() => {
         window.__TAURI__.app.getVersion().then((version) => {
@@ -30,41 +33,59 @@ function Launcher() {
             setVersion("");
         });
 
-        const handlewatchShortcutStartStopListen = (event) => {
-            EventEmitter.emit("start_stop_event_FtoF", event.payload);
+        const handleWatchShortcutStartStopListen = (data) => {
+            if (!data.payload.isRunning) {
+                start(data.isMode, data.isDelay);
+            } else {
+                stop(data.isMode);
+            }
         };
 
-        const changeGlobalShortcutState = (data) => {
-            setGlobalShortcutActive(data);
-        }
+        const handleWatchSetShortcutEmitter = (data) => {
+            setGlobalShortcutRegistered(true);
+            localforage.getItem("settings").then(async (res) => {
 
-        const watchShortcutStartStopListen = listen("start_stop_event", handlewatchShortcutStartStopListen);
-        const listenGlobalShortcutAction = EventEmitter.addListener("change_global_shortcut_state", changeGlobalShortcutState);
+                //register for shortcuts
+                let globalShortcut = JSON.parse(res || "{}").isShortcut || defaultStoreData.isShortcut;
+                unregisterAll().then(res1 => {
+                    // not registered yet
+                    // alert("unregister #1");
+                    console.log("unregister #1")
+                    register(globalShortcut, (globalShortcut1) => {
+                        invoke("start_stop_global_shortcut_pressed", { invokeMessage: true });
+                    }).then(() => {
+                        console.log("registered #1")
+                    }).catch((err) => {
+                        console.log("cant registered trying one more time #1")
+
+                        unregister(globalShortcut).then(res2 => {
+                            // alert("unregister #2");
+                            console.log("unregister #2")
+
+                            register(globalShortcut, (globalShortcut2) => {
+                                invoke("start_stop_global_shortcut_pressed", { invokeMessage: true });
+                            }).catch(err => {
+                                // alert("cant registered #2");
+                                console.log("cant registered #2")
+                            })
+                        }).then(() => {
+                            console.log("registered #2")
+
+                        }).catch(err => {
+                            console.log("unregister catch error #2")
+                        })
+                    });
+                });
+            });
+        };
+
+        const watchShortcutStartStopListen = listen("start_stop_event", handleWatchShortcutStartStopListen);
+        const watchSetShortcutEmitter = listen("global_shortcut_register", handleWatchSetShortcutEmitter);
         return () => {
             watchShortcutStartStopListen.then((f) => f());
-            listenGlobalShortcutAction.remove();
+            watchSetShortcutEmitter.then((f) => f());
         }
     }, []);
-
-    React.useEffect(() => {
-        const LauncherStartStop = (data, IGA) => {
-            // console.log(IGA);
-            if (IGA) {
-                if (!data.isRunning) {
-                    start(data.isMode, data.isDelay);
-                } else {
-                    stop(data.isMode);
-                }
-            }
-        }
-        const FtoFListener = EventEmitter.addListener("start_stop_event_FtoF", (event) => {
-            LauncherStartStop(event, reduxState.isGlobalShortcutActive);
-        });
-
-        return () => {
-            FtoFListener.remove();
-        }
-    }, [reduxState.isGlobalShortcutActive]);
 
     //Global shortcut watcher
     React.useEffect(() => {

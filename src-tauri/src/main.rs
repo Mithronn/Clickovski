@@ -96,14 +96,19 @@ fn start_stop_global_shortcut_pressed(
     app_handle.emit_all("start_stop_event", data);
 }
 
+#[tauri::command]
+fn global_shortcut_register(app_handle: tauri::AppHandle, invoke_message: bool) {
+    app_handle.emit_all("global_shortcut_register", true);
+}
+
 fn main() {
     // App Tray Construction
-    let clickovskiLabel = CustomMenuItem::new("clickovski".to_string(), "Clickovski").disabled();
+    let clickovski_label = CustomMenuItem::new("clickovski".to_string(), "Clickovski").disabled();
     let hide = CustomMenuItem::new("hide".to_string(), "Hide");
     let settings = CustomMenuItem::new("settings".to_string(), "Settings");
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");
     let tray_menu = SystemTrayMenu::new()
-        .add_item(clickovskiLabel)
+        .add_item(clickovski_label)
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(hide)
         .add_item(settings)
@@ -128,6 +133,7 @@ fn main() {
             show_notification,
             close_updater_and_open_main,
             start_stop_global_shortcut_pressed,
+            global_shortcut_register,
         ])
         .setup(|app| Ok(()))
         .on_system_tray_event(|app, event| match event {

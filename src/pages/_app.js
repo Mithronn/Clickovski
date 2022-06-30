@@ -3,7 +3,7 @@ import Head from "next/head";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { AnimatePresence } from 'framer-motion'
 import { Provider } from 'react-redux'
-import { emit, listen } from '@tauri-apps/api/event'
+import { listen } from '@tauri-apps/api/event'
 import dynamic from "next/dynamic";
 import localforage from 'localforage';
 import { I18nextProvider, getI18n } from 'react-i18next'
@@ -14,7 +14,6 @@ import '../styles/globals.css';
 import { defaultStoreData } from "../lib/constants";
 import i18n from '../components/i18n'
 import { setGlobalShortcutActive, setGlobalShortcut, } from '../redux/actions';
-import EventEmitter from "../utils/EventEmitter";
 
 function SafeHydrate({ children }) {
     return (
@@ -74,27 +73,6 @@ function App(props) {
             store.dispatch(setGlobalShortcut(JSON.parse(res || "{}").isShortcut || defaultStoreData.isShortcut));
             await getI18n().changeLanguage(JSON.parse(res || "{}").language || defaultStoreData.language);
 
-            //register for shortcuts
-            let globalShortcut = JSON.parse(res || "{}").isShortcut || defaultStoreData.isShortcut;
-            window.__TAURI__.globalShortcut.unregisterAll().then(res1 => {
-                // not registered yet
-                window.__TAURI__.globalShortcut.register(globalShortcut, (globalShortcut1) => {
-                    window.__TAURI__.invoke("start_stop_global_shortcut_pressed", { invokeMessage: true });
-                }).catch((err) => {
-                    window.__TAURI__.globalShortcut.unregister(globalShortcut).then(res2 => {
-                        window.__TAURI__.globalShortcut.register(globalShortcut, (globalShortcut2) => {
-                            window.__TAURI__.invoke("start_stop_global_shortcut_pressed", { invokeMessage: true });
-                        }).catch(err => {
-                            store.dispatch(setGlobalShortcut(null));
-                            localforage.setItem("settings", JSON.stringify(res ? { ...JSON.parse(res), isShortcut: null } : { ...defaultStoreData, isShortcut: null }));
-                        })
-                    }).catch(err => {
-                        store.dispatch(setGlobalShortcut(null));
-                        localforage.setItem("settings", JSON.stringify(res ? { ...JSON.parse(res), isShortcut: null } : { ...defaultStoreData, isShortcut: null }));
-                    })
-                });
-            })
-
             // watch startup plugin state and set a value to global store
             window.__TAURI__.invoke("plugin:autostart|is_enabled").then((enabledState) => { // tauri plugin function
                 if (enabledState) {
@@ -111,11 +89,10 @@ function App(props) {
         const routeSettingsListen = listen("routeSettings", routeSettings);
         const shortcutActivationListen = listen("activate_shortcuts", () => {
             store.dispatch(setGlobalShortcutActive(true));
-            EventEmitter.emit("change_global_shortcut_state", true);
         });
 
+        // Disable context menu function
         let contextMenuListener = (event) => {
-            // alert("You've tried to open context menu"); //here you draw your own menu
             event.preventDefault();
             return false;
         }
@@ -144,7 +121,6 @@ function App(props) {
                                 <title>Clickovski</title>
                             </Head>
 
-                            {/* <Frame {...pageProps} key="FRAME" /> */}
                             <AnimatePresence
                                 exitBeforeEnter
                                 initial={false}

@@ -1,7 +1,7 @@
 import React from 'react'
 import Head from "next/head";
 import moment from 'moment';
-import { emit, listen } from '@tauri-apps/api/event'
+import { useRouter } from 'next/router'
 import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
 import { relaunch } from '@tauri-apps/api/process'
 import { getI18n, useTranslation } from 'react-i18next'
@@ -17,6 +17,7 @@ function Update(props) {
     const [isUpdateInfo, setUpdateInfo] = React.useState({});
     const [isUpdateProgress, setUpdateProgress] = React.useState({ percent: 0 });
     const theme = useTheme();
+    const router = useRouter();
 
     React.useEffect(() => {
         // const updateDownloadingData = (event) => {
@@ -45,7 +46,10 @@ function Update(props) {
         (async () => {
             try {
                 const { shouldUpdate, manifest } = await checkUpdate();
-                if (!shouldUpdate) return window.__TAURI__.invoke("close_updater_and_open_main");
+                if (!shouldUpdate) {
+                    window.__TAURI__.invoke("global_shortcut_register", { invokeMessage: true });
+                    return window.__TAURI__.invoke("close_updater_and_open_main");
+                }
                 if (shouldUpdate) {
                     setUpdateInfo({
                         releaseDate: manifest.date,
@@ -66,6 +70,7 @@ function Update(props) {
                 }
             } catch (error) {
                 console.log(error);
+                window.__TAURI__.invoke("global_shortcut_register", { invokeMessage: true });
                 return window.__TAURI__.invoke("close_updater_and_open_main");
             }
         })();
