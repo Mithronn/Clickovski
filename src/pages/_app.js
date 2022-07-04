@@ -70,6 +70,9 @@ function App(props) {
                 localforage.setItem("settings", JSON.stringify(defaultStoreData));
             }
 
+            // Set Theme
+            document.body.style.backgroundColor = JSON.parse(res)?.isDarkMode ? "rgba(32,28,28,1)" : "#ffffff";
+
             store.dispatch(setGlobalShortcut(JSON.parse(res || "{}").isShortcut || defaultStoreData.isShortcut));
             await getI18n().changeLanguage(JSON.parse(res || "{}").language || defaultStoreData.language);
 

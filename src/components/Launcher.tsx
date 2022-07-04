@@ -3,7 +3,7 @@ import { useRouter } from 'next/router'
 const { motion, AnimatePresence } = require('framer-motion');
 import { useDispatch, useSelector } from 'react-redux'
 import { emit, listen } from '@tauri-apps/api/event'
-import { register, unregister, unregisterAll } from '@tauri-apps/api/globalShortcut'
+import { register, unregister, unregisterAll, isRegistered } from '@tauri-apps/api/globalShortcut'
 import { invoke } from '@tauri-apps/api/tauri'
 import { getI18n, useTranslation } from 'react-i18next'
 import localforage from 'localforage';
@@ -91,24 +91,24 @@ function Launcher() {
     React.useEffect(() => {
         localforage.getItem("settings").then(res => {
             // unregister previous shortcut
-            if (JSON.parse(res).isShortcut) {
-                let globalShortcut = JSON.parse(res).isShortcut;
-                window.__TAURI__.globalShortcut.isRegistered(globalShortcut).then(res1 => {
+            if (JSON.parse(String(res)).isShortcut) {
+                let globalShortcut = JSON.parse(String(res)).isShortcut;
+                isRegistered(globalShortcut).then(res1 => {
                     if (res1) { // not registered yet
-                        window.__TAURI__.globalShortcut.unregister(globalShortcut);
+                        unregister(globalShortcut);
                     }
                 })
             }
 
             // set new shortcut to localforage
-            localforage.setItem("settings", JSON.stringify({ ...JSON.parse(res), isShortcut: reduxState.isGlobalShortcut }));
+            localforage.setItem("settings", JSON.stringify({ ...JSON.parse(String(res)), isShortcut: reduxState.isGlobalShortcut }));
 
             // register new shortcut
-            window.__TAURI__.globalShortcut.isRegistered(reduxState.isGlobalShortcut).then(res1 => {
+            isRegistered(reduxState.isGlobalShortcut).then(res1 => {
                 if (!res1) { // not registered yet
                     // console.log("registering")
-                    window.__TAURI__.globalShortcut.register(reduxState.isGlobalShortcut, (globalShortcut) => {
-                        window.__TAURI__.invoke("start_stop_global_shortcut_pressed", { invokeMessage: true });
+                    register(reduxState.isGlobalShortcut, (globalShortcut) => {
+                        invoke("start_stop_global_shortcut_pressed", { invokeMessage: true });
                     });
                 }
             })
@@ -135,33 +135,33 @@ function Launcher() {
 
         dispatch(setStarting(true));
 
-        window.__TAURI__.invoke('start_launcher').then((res) => {
+        invoke('start_launcher').then((res) => {
             dispatch(startLauncher());
 
 
             localforage.getItem("settings").then(res => {
                 if (JSON.parse(String(res))?.isNotifications) {
                     if (isMode && isMode === "withTimer") {
-                        window.__TAURI__.invoke('show_notification', {
+                        invoke('show_notification', {
                             invokeMessage: JSON.stringify({
                                 body: t('click_start', { delay: (1000 / Number(isDelay)).toFixed(1) }),
                             })
                         });
                     } else if (isMode && isMode === "withToggle") {
-                        window.__TAURI__.invoke('show_notification', {
+                        invoke('show_notification', {
                             invokeMessage: JSON.stringify({
                                 body: t('hold_start'),
                             })
                         });
                     } else {
                         if (reduxState.isMode === "withTimer") {
-                            window.__TAURI__.invoke('show_notification', {
+                            invoke('show_notification', {
                                 invokeMessage: JSON.stringify({
                                     body: t('click_start', { delay: (1000 / Number(reduxState.isDelay)).toFixed(1) }),
                                 })
                             });
                         } else if (reduxState.isMode === "withToggle") {
-                            window.__TAURI__.invoke('show_notification', {
+                            invoke('show_notification', {
                                 invokeMessage: JSON.stringify({
                                     body: t('hold_start'),
                                 })
@@ -177,31 +177,31 @@ function Launcher() {
     }
 
     function stop(isMode = null) {
-        window.__TAURI__.invoke('stop_launcher');
+        invoke('stop_launcher');
         dispatch(stopLauncher());
         localforage.getItem("settings").then(res => {
             if (JSON.parse(String(res))?.isNotifications) {
                 if (isMode && isMode === "withTimer") {
-                    window.__TAURI__.invoke('show_notification', {
+                    invoke('show_notification', {
                         invokeMessage: JSON.stringify({
                             body: t('click_stop'),
                         })
                     });
                 } else if (isMode && isMode === "withToggle") {
-                    window.__TAURI__.invoke('show_notification', {
+                    invoke('show_notification', {
                         invokeMessage: JSON.stringify({
                             body: t('press_and_hold'),
                         })
                     });
                 } else {
                     if (reduxState.isMode === "withTimer") {
-                        window.__TAURI__.invoke('show_notification', {
+                        invoke('show_notification', {
                             invokeMessage: JSON.stringify({
                                 body: t('click_stop'),
                             })
                         });
                     } else if (reduxState.isMode === "withToggle") {
-                        window.__TAURI__.invoke('show_notification', {
+                        invoke('show_notification', {
                             invokeMessage: JSON.stringify({
                                 body: t('press_and_hold'),
                             })

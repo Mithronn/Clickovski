@@ -29,6 +29,7 @@
         "recording": "recording",
         "not_recording": "not recording",
         "not_available_for_now": "Not available for now",
-        "shortcut_key": "Shortcut key"
+        "shortcut_key": "Shortcut key",
+        "keyboard_press_same_as_hotkey": "The key should not be the same as hotkey!"
     }
 }

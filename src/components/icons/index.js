@@ -10,3 +10,4 @@ export { default as Russia } from "./Russia";
 export { default as SettingsIcon } from "./SettingsIcon";
 export { default as Spain } from "./Spain";
 export { default as Turkey } from "./Turkey";
+export { default as WarningIcon } from "./WarningIcon";

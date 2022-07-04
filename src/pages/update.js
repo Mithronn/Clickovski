@@ -5,6 +5,7 @@ import { useRouter } from 'next/router'
 import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
 import { relaunch } from '@tauri-apps/api/process'
 import { getI18n, useTranslation } from 'react-i18next'
+import { useSelector } from 'react-redux'
 
 import LottieAnimation from '../components/LottieAnimation';
 import useTheme from "../components/useTheme";
@@ -16,7 +17,8 @@ function Update(props) {
     const [isUpdateState, setUpdateState] = React.useState("Checking");
     const [isUpdateInfo, setUpdateInfo] = React.useState({});
     const [isUpdateProgress, setUpdateProgress] = React.useState({ percent: 0 });
-    const theme = useTheme();
+    const reduxState = useSelector((state) => state);
+    const theme = useTheme(reduxState);
     const router = useRouter();
 
     React.useEffect(() => {

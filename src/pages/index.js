@@ -10,9 +10,8 @@ import { emit, listen } from '@tauri-apps/api/event'
 import { getI18n, useTranslation } from 'react-i18next'
 import dynamic from 'next/dynamic'
 
-import { DownloadIcon, SettingsIcon, RecordIcon } from "../components/icons";
+import { DownloadIcon, SettingsIcon, RecordIcon, WarningIcon } from "../components/icons";
 import CustomCheckbox from "../components/Checkbox.tsx";
-// import MouseSVG from "../components/MouseComponent.tsx";
 import { transition, convertKeyToReadableFromBackend } from "../lib/constants.js";
 import { setMode, setDelay, setKeyType, setKey } from '../redux/actions';
 import useTheme from '../components/useTheme';
@@ -27,8 +26,8 @@ const DynamicImportedMouseSVG = dynamic(
 const Home = () => {
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  const theme = useTheme()
   const reduxState = useSelector((state) => state);
+  const theme = useTheme(reduxState)
   const dispatch = useDispatch();
   const [isListeningKeyboard, setListeningKeyboard] = React.useState(false);
   const [isListenedKeys, setListenedKeys] = React.useState(reduxState.isKey ? String(reduxState.isKey).split("+") : []);
@@ -74,12 +73,17 @@ const Home = () => {
       setListenedKeys(["Left"]);
       dispatch(setKey("Left"));
     }
+
+    if (reduxState.isKeyType === "Keyboard") {
+      setListenedKeys(["C"])
+      dispatch(setKey("C"))
+    }
     window.__TAURI__.invoke('change_key_type', { invokeMessage: String(reduxState.isKeyType) });
   }, [reduxState.isKeyType]);
 
   React.useEffect(() => {
     window.__TAURI__.invoke('change_key', { invokeMessage: convertKeyToReadableFromBackend(reduxState.isKey) });
-    // console.log(convertKeyToReadableFromBackend(reduxState.isKey));
+    console.log(convertKeyToReadableFromBackend(reduxState.isKey));
   }, [reduxState.isKey]);
 
   React.useEffect(() => {
@@ -111,7 +115,9 @@ const Home = () => {
         }
 
         if (isListenedKeys.length > 0) {
-          // console.log("push to backend", removedKeys)
+          removedKeys = new Set(removedKeys);
+          removedKeys = Array.from(removedKeys);
+          setListenedKeys(removedKeys);
           dispatch(setKey(removedKeys.join("+").trim()));
         }
         KeyboardEventListenerRef.current.onkeydown = null;
@@ -231,12 +237,12 @@ const Home = () => {
 
           {/* Keyboard */}
           <div className={`flex flex-col space-y-3 duration-150 w-1/2`}>
-            <CustomToolTip title={t("not_available_for_now")} disableInteractive placement="bottom">
-              <label className={`flex flex-row space-x-2 items-center ${/*reduxState.isStarted */ true ? "cursor-not-allowed" : "cursor-pointer"}`}>
-                <CustomCheckbox disabled={true /* reduxState.isStarted */} onChange={() => dispatch(setKeyType("Keyboard"))} checked={reduxState.isKeyType === "Keyboard"} />
-                <p className={`font-Readex font-bold text-base select-none ${reduxState.isKeyType === "Keyboard" ? "opacity-100" : "opacity-50"} ${theme ? "text-white" : "text-black"} duration-150`}>{t('keyboard')}</p>
-              </label>
-            </CustomToolTip>
+            {/* <CustomToolTip title={t("not_available_for_now")} disableInteractive placement="bottom"> */}
+            <label className={`flex flex-row space-x-2 items-center ${reduxState.isStarted /*true */ ? "cursor-not-allowed" : "cursor-pointer"}`}>
+              <CustomCheckbox disabled={/*true */ reduxState.isStarted} onChange={() => dispatch(setKeyType("Keyboard"))} checked={reduxState.isKeyType === "Keyboard"} />
+              <p className={`font-Readex font-bold text-base select-none ${reduxState.isKeyType === "Keyboard" ? "opacity-100" : "opacity-50"} ${theme ? "text-white" : "text-black"} duration-150`}>{t('keyboard')}</p>
+            </label>
+            {/* </CustomToolTip> */}
 
             <div className="flex flex-col space-y-2 w-full">
               <ClickAwayListener onClickAway={() => setListeningKeyboard(false)}>
@@ -264,8 +270,21 @@ const Home = () => {
                 </button>
               </ClickAwayListener>
               <label className="flex flex-row space-x-2 items-center">
-                <p className="font-Readex font-bold text-xs select-none text-opacity-0 opacity-0">#</p>
-                <p className={`font-Readex font-bold text-xs select-none ${reduxState.isKeyType === "Keyboard" ? "opacity-100" : "opacity-50"} ${theme ? isListeningKeyboard ? "text-blue-500" : "text-gray-400" : isListeningKeyboard ? "text-blue-500" : "text-gray-400"} duration-150`}>{isListeningKeyboard ? `${t("buttons")} ${t('recording')}` : ""}</p>
+                {reduxState.isGlobalShortcut === isListenedKeys.join("+").trim() && !isListeningKeyboard ?
+                  (
+                    <>
+                      <WarningIcon className={`${theme ? "text-yellow-500" : "text-yellow-600"} select-none`} width={32} height={32} />
+                      <p className={`font-Readex font-bold text-xs select-none ${reduxState.isKeyType === "Keyboard" ? "opacity-100" : "opacity-50"} ${theme ? "text-yellow-500" : "text-yellow-600"} duration-150`}>{t('keyboard_press_same_as_hotkey')}</p>
+                    </>
+                  )
+                  :
+                  (
+                    <>
+                      <p className="font-Readex font-bold text-xs select-none text-opacity-0 opacity-0">#</p>
+                      <p className={`font-Readex font-bold text-xs select-none ${reduxState.isKeyType === "Keyboard" ? "opacity-100" : "opacity-50"} ${theme ? isListeningKeyboard ? "text-blue-500" : "text-gray-400" : isListeningKeyboard ? "text-blue-500" : "text-gray-400"} duration-150`}>{isListeningKeyboard ? `${t("buttons")} ${t('recording')}` : ""}</p>
+                    </>
+                  )
+                }
               </label>
             </div>
           </div>

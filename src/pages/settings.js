@@ -153,6 +153,9 @@ function Settings(props) {
 
                 if (isListenedKeys.length > 0) {
                     // console.log("push to backend", removedKeys)
+                    removedKeys = new Set(removedKeys);
+                    removedKeys = Array.from(removedKeys);
+                    setListenedKeys(removedKeys);
                     dispatch(setGlobalShortcut(removedKeys.join("+").trim()));
                 }
                 KeyboardEventListenerRef.current.onkeydown = null;
@@ -188,7 +191,15 @@ function Settings(props) {
     function KeyboardEventListenerFunction(e) {
         // console.log(e.key)
         e.preventDefault();
-        setListenedKeys((keys) => [...keys, String(String(e.key).charAt(0).toUpperCase() + String(e.key).slice(1)).trim()]);
+        if (String(e.key).trim() === "") {
+            setListenedKeys((keys) => [...keys, "Space"]);
+        } else if (String(e.key).trim() === "+") {
+            setListenedKeys((keys) => [...keys, "Plus"]);
+        } else if (["Home", "NumLock", "ScrollLock", "Pause", "Insert"].includes(String(e.key).trim())) {
+            // Do nothing they are not supported keys in rust package enigo@0.0.14
+        } else {
+            setListenedKeys((keys) => [...keys, String(String(e.key).charAt(0).toUpperCase() + String(e.key).slice(1)).trim()]);
+        }
     }
 
     return (

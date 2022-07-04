@@ -2,28 +2,29 @@
     all(not(debug_assertions), target_os = "windows"),
     windows_subsystem = "windows"
 )]
-use serde_json::{Result, Value};
+use serde_json::Value;
 use std::process;
 use tauri::{
-    api::notification::Notification, CustomMenuItem, Manager, Menu, State, SystemTray,
-    SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
+    api::notification::Notification, CustomMenuItem, Manager, State, SystemTray, SystemTrayEvent,
+    SystemTrayMenu, SystemTrayMenuItem,
 };
 use tauri_plugin_autostart::MacosLauncher;
 
+mod dsl;
 mod script_core;
 use script_core::StateCore;
 
 #[tauri::command]
 fn start_launcher(state_core: State<'_, StateCore>) -> bool {
     // let v: Value = serde_json::from_str(&invoke_message).unwrap();
-    state_core.startLauncher();
+    state_core.start_launcher();
 
     return true;
 }
 
 #[tauri::command]
 fn stop_launcher(state_core: State<'_, StateCore>) -> bool {
-    state_core.stopLauncher();
+    state_core.stop_launcher();
 
     return true;
 }
@@ -50,7 +51,7 @@ fn change_key_type(state_core: State<'_, StateCore>, invoke_message: String) {
 
 #[tauri::command]
 fn show_notification(
-    state_core: State<'_, StateCore>,
+    _state_core: State<'_, StateCore>,
     app_handle: tauri::AppHandle,
     invoke_message: String,
 ) {
@@ -60,9 +61,10 @@ fn show_notification(
     if v.as_object().unwrap().contains_key("title") {
         notification
             .title(v.get("title").and_then(|value| value.as_str()).unwrap())
-            .show();
+            .show()
+            .unwrap();
     } else {
-        notification.show();
+        notification.show().unwrap();
     }
 }
 
@@ -78,7 +80,8 @@ async fn close_updater_and_open_main(window: tauri::Window) {
     window
         .get_window("main")
         .unwrap()
-        .emit("activate_shortcuts", true);
+        .emit("activate_shortcuts", true)
+        .unwrap();
 }
 
 #[tauri::command]
@@ -93,12 +96,14 @@ fn start_stop_global_shortcut_pressed(
         "isDelay":&*state_core.delay_for_notifications.borrow(),
     });
 
-    app_handle.emit_all("start_stop_event", data);
+    app_handle.emit_all("start_stop_event", data).unwrap();
 }
 
 #[tauri::command]
 fn global_shortcut_register(app_handle: tauri::AppHandle, invoke_message: bool) {
-    app_handle.emit_all("global_shortcut_register", true);
+    app_handle
+        .emit_all("global_shortcut_register", true)
+        .unwrap();
 }
 
 fn main() {
@@ -135,7 +140,7 @@ fn main() {
             start_stop_global_shortcut_pressed,
             global_shortcut_register,
         ])
-        .setup(|app| Ok(()))
+        .setup(|_app| Ok(()))
         .on_system_tray_event(|app, event| match event {
             SystemTrayEvent::LeftClick {
                 position: _,
@@ -186,7 +191,7 @@ fn main() {
                             }
                             window.set_focus().unwrap();
 
-                            window.emit("routeSettings", true);
+                            window.emit("routeSettings", true).unwrap();
                         }
                     }
                     "quit" => {
@@ -201,26 +206,3 @@ fn main() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-
-// pub fn listenerBuilder<
-//   F: Fn(tauri::Event, &StateCore) -> () + Send + 'static + std::marker::Sync,
-// >(
-//   app: &mut tauri::App,
-//   state_coree: &StateCore,
-//   eventName: &str,
-//   f: F,
-// ) -> tauri::EventHandler {
-//   let mut state_core_cloned = state_coree.clone();
-//   app.listen_global(eventName, move |event| f(event, &state_core_cloned))
-// }
-
-// let start_listener_id = listenerBuilder(
-//   app,
-//   &state_core,
-//   &"start",
-//   move |event: tauri::Event, state_coree: &StateCore| {
-//     let mut state_core_cloned = &mut state_coree.clone();
-//     state_core_cloned.startLauncher(200);
-//     println!("start event received {:?}", event.payload());
-//   },
-// );

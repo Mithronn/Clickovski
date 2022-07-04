@@ -29,6 +29,7 @@
         "recording": "kaydediliyor",
         "not_recording": "kaydedilmiyor",
         "not_available_for_now": "Şimdilik kullanılamaz",
-        "shortcut_key": "Kısayol tuşu"
+        "shortcut_key": "Kısayol tuşu",
+        "keyboard_press_same_as_hotkey": "Basılacak tuş kısayol tuşu ile aynı olmamalı!"
     }
 }
