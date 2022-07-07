@@ -7,7 +7,7 @@ import { Tooltip, ClickAwayListener } from "@mui/material"
 import { tooltipClasses } from '@mui/material/Tooltip';
 import { styled } from '@mui/material/styles';
 import { emit, listen } from '@tauri-apps/api/event'
-import { getI18n, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 import dynamic from 'next/dynamic'
 
 import { DownloadIcon, SettingsIcon, RecordIcon, WarningIcon } from "../components/icons";
@@ -27,7 +27,7 @@ const Home = () => {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const reduxState = useSelector((state) => state);
-  const theme = useTheme(reduxState)
+  const theme = useTheme()
   const dispatch = useDispatch();
   const [isListeningKeyboard, setListeningKeyboard] = React.useState(false);
   const [isListenedKeys, setListenedKeys] = React.useState(reduxState.isKey ? String(reduxState.isKey).split("+") : []);
@@ -36,6 +36,7 @@ const Home = () => {
   const KeyboardEventListenerRef = React.useRef();
 
   const [isUpdateState, setUpdateState] = React.useState("Checking");
+
 
   React.useEffect(() => {
     const updateState = (event) => {

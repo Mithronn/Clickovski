@@ -1,32 +1,15 @@
 import React from 'react'
-import { useSelector, useDispatch } from "react-redux";
-import { setDarkMode } from "../redux/actions";
-import localforage from 'localforage';
+import { useTheme as useNextTheme } from "./Theme.tsx";
 
 function useTheme(reduxState = null) {
-    const redux = useSelector((state) => state);
-    const dispatch = useDispatch();
-    const [isDarkM, setDarkM] = React.useState(redux && redux.isDarkMode ? redux.isDarkMode : false);
+    const { theme: themee } = useNextTheme();
+    const [theme, setThemee] = React.useState(themee === "dark" ? true : themee == "light" ? false : false);
 
     React.useEffect(() => {
-        localforage.getItem("settings", (err, data) => {
-            if (data) {
-                let mode = JSON.parse(data)?.isDarkMode
-                dispatch(setDarkMode(mode));
-                return setDarkM(mode);
-            }
+        setThemee(themee === "dark" ? true : themee == "light" ? false : false)
+    }, [themee]);
 
-            if (err) {
-                dispatch(setDarkMode(false));
-                return setDarkM(false);
-            }
-        })
-    }, []);
-
-    return (reduxState && typeof (reduxState.isDarkMode) != 'undefined' && reduxState.isDarkMode != null) ?
-        redux.isDarkMode
-        :
-        isDarkM
+    return theme;
 }
 
 export default useTheme

@@ -3,12 +3,13 @@ import { useRouter } from 'next/router'
 const { motion, AnimatePresence } = require('framer-motion');
 import { useDispatch, useSelector } from 'react-redux'
 import { emit, listen } from '@tauri-apps/api/event'
+import { getVersion } from '@tauri-apps/api/app';
 import { register, unregister, unregisterAll, isRegistered } from '@tauri-apps/api/globalShortcut'
 import { invoke } from '@tauri-apps/api/tauri'
 import { getI18n, useTranslation } from 'react-i18next'
 import localforage from 'localforage';
 
-import { startLauncher, stopLauncher, setStarting, setErrorMessage, setGlobalShortcut } from '../redux/actions';
+import { startLauncher, stopLauncher, setStarting, setErrorMessage } from '../redux/actions';
 import { transition } from "../lib/constants.js";
 import useTheme from '../components/useTheme';
 import { defaultStoreData } from "../lib/constants";
@@ -19,7 +20,7 @@ function Launcher() {
 
     const router = useRouter();
     const reduxState = useSelector((state: any) => state);
-    const theme = useTheme(reduxState);
+    const theme = useTheme();
     const dispatch = useDispatch();
 
     const [isVersionShow, setVersionShow] = React.useState(false);
@@ -27,7 +28,7 @@ function Launcher() {
     const [isGlobalShortcutRegistered, setGlobalShortcutRegistered] = React.useState(false);
 
     React.useEffect(() => {
-        window.__TAURI__.app.getVersion().then((version) => {
+        getVersion().then((version) => {
             setVersion(String(version).trim() !== "" ? `v${version}` : "");
         }).catch((error) => {
             setVersion("");

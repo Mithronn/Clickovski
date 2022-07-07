@@ -30,6 +30,11 @@
         "not_recording": "kaydedilmiyor",
         "not_available_for_now": "Şimdilik kullanılamaz",
         "shortcut_key": "Kısayol tuşu",
-        "keyboard_press_same_as_hotkey": "Basılacak tuş kısayol tuşu ile aynı olmamalı!"
+        "keyboard_press_same_as_hotkey": "Basılacak tuş kısayol tuşu ile aynı olmamalı!",
+        "downloading": "İndiriliyor",
+        "finalizing": "Tamamlanıyor",
+        "checking_for_updates": "Sürüm kontrol ediliyor",
+        "updates_downloading": "Güncelleme indiriliyor",
+        "updates_downloaded": "Güncelleme indirildi"
     }
 }

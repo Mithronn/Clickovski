@@ -3,7 +3,6 @@ import { Tooltip, ClickAwayListener } from "@mui/material"
 import { tooltipClasses } from '@mui/material/Tooltip';
 import { styled } from '@mui/material/styles';
 import { getI18n, useTranslation } from 'react-i18next'
-import useDetectOS from "./DetectOS";
 
 interface MouseComponentProps {
     theme: boolean

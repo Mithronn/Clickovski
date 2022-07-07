@@ -8,24 +8,26 @@ import {
 } from "@mui/material"
 import { styled } from '@mui/material/styles';
 import { useDispatch, useSelector } from 'react-redux'
-import { emit, listen } from '@tauri-apps/api/event'
 import localforage from 'localforage';
-import { getI18n, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
+import { invoke } from '@tauri-apps/api/tauri'
+
 
 import { RightIcon, SettingsIcon, RecordIcon } from "../components/icons";
 import { transition, defaultStoreData } from "../lib/constants.js";
-// import CustomCheckbox from "../components/Checkbox.tsx";
 import Flags from "../components/Flags.tsx";
 import styles from "../styles/CSS.module.css";
 import { setLanguage as setLanguageForRedux, setDarkMode as setDarkModeForRedux, setGlobalShortcut } from '../redux/actions';
 import useTheme from "../components/useTheme";
+import { useTheme as useNextTheme } from "../components/Theme.tsx";
 
 
 function Settings(props) {
     const { t, i18n } = useTranslation();
     const router = useRouter();
     const reduxState = useSelector((state) => state);
-    const isDarkMode = useTheme(reduxState);
+    const { setTheme } = useNextTheme();
+    const isDarkMode = useTheme()
     const dispatch = useDispatch();
     const KeyboardEventListenerRef = React.useRef();
 
@@ -47,6 +49,7 @@ function Settings(props) {
         })
         dispatch(setLanguageForRedux(item.name));
         await i18n.changeLanguage(item.name);
+        window.__TAURI__.window.appWindow.setTitle(`Clickovski - ${t('settings')}`);
         setLanguageOpen(!isLanguageOpen);
     }
 
@@ -63,9 +66,9 @@ function Settings(props) {
         localforage.getItem("settings").then(res => {
             let startUpState = isActivatedSettings.find(x => x === "isStartUp");
             if (startUpState) {
-                window.__TAURI__.invoke("plugin:autostart|disable").then((a /* this is void */) => { });// tauri plugin function
+                invoke("plugin:autostart|disable").then((a /* this is void */) => { });// tauri plugin function
             } else {
-                window.__TAURI__.invoke("plugin:autostart|enable").then((a /* this is void */) => { });// tauri plugin function
+                invoke("plugin:autostart|enable").then((a /* this is void */) => { });// tauri plugin function
             }
             localforage.setItem("settings", JSON.stringify({ ...JSON.parse(res), isStartUp: startUpState ? false : true }))
         }).catch(err => {
@@ -76,9 +79,11 @@ function Settings(props) {
 
     const setDarkModeFunc = () => {
         localforage.getItem("settings").then(res => {
-            localforage.setItem("settings", JSON.stringify({ ...JSON.parse(res), isDarkMode: isActivatedSettings.find(x => x === "isDarkMode") ? false : true }))
+            localforage.setItem("settings", JSON.stringify({ ...JSON.parse(res), isDarkMode: isActivatedSettings.find(x => x === "isDarkMode") ? false : true }));
+            setTheme(isActivatedSettings.find(x => x === "isDarkMode") ? "light" : "dark")
         }).catch(err => {
             localforage.setItem("settings", JSON.stringify({ ...JSON.parse(defaultStoreData), isDarkMode: isActivatedSettings.find(x => x === "isDarkMode") ? false : true }))
+            setTheme(isActivatedSettings.find(x => x === "isDarkMode") ? "light" : "dark")
         })
         setDarkMode(isActivatedSettings.find(x => x === "isDarkMode") ? false : true);
         dispatch(setDarkModeForRedux(isActivatedSettings.find(x => x === "isDarkMode") ? false : true));
@@ -102,7 +107,7 @@ function Settings(props) {
             }
 
             // set startup state to local state
-            window.__TAURI__.invoke("plugin:autostart|is_enabled").then((enabledState) => { // tauri plugin function
+            invoke("plugin:autostart|is_enabled").then((enabledState) => { // tauri plugin function
                 if (enabledState && !array.find(x => x === "isStartUp")) {
                     array.push("isStartUp");
                 }

@@ -41,7 +41,6 @@ export default class MyDocument extends Document {
         return (
             <Html>
                 <Head>
-                    <meta name="theme-color" content="#FFFFFF" />
                     <style
                         data-emotion-css={this.props.ids.join(" ")}
                         dangerouslySetInnerHTML={{ __html: this.props.css }}
