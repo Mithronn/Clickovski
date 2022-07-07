@@ -87,6 +87,7 @@
         "title": "Clickovski Updater",
         "url": "update",
         "decorations": false,
+        "visible": false,
         "label": "updatescreen",
         "center": true
       }

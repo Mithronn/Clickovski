@@ -69,6 +69,13 @@ fn show_notification(
 }
 
 #[tauri::command]
+async fn open_updater_on_mount(window: tauri::Window) {
+    if let Some(update_screen) = window.get_window("updatescreen") {
+        update_screen.show().unwrap();
+    }
+}
+
+#[tauri::command]
 async fn close_updater_and_open_main(window: tauri::Window) {
     // Close update screen
     if let Some(update_screen) = window.get_window("updatescreen") {
@@ -137,6 +144,7 @@ fn main() {
             change_key_type,
             show_notification,
             close_updater_and_open_main,
+            open_updater_on_mount,
             start_stop_global_shortcut_pressed,
             global_shortcut_register,
         ])

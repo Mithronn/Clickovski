@@ -32,6 +32,9 @@ function Update(props) {
         //     setUpdateInfo(event.payload);
         // }
 
+        // Hide update window on mount to prevent white screen
+        invoke("open_updater_on_mount");
+
         (async () => {
             try {
                 const { shouldUpdate, manifest } = await checkUpdate();
