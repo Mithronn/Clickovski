@@ -7,12 +7,10 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
-use tauri::api::notification::Notification;
 
 use crate::dsl::{tokenize, ParseError, Token};
 use enigo::*;
 
-// #[derive(Debug)]
 // #[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 pub struct StateCore {
@@ -25,8 +23,6 @@ pub struct StateCore {
     pub channel_reciever: RefCell<Arc<Mutex<Receiver<bool>>>>,
     pub date: Instant,
     pub enigo_engine: RefCell<Arc<Mutex<Enigo>>>,
-    pub notification: Notification,
-    pub notification_identifier: RefCell<String>,
 }
 
 unsafe impl std::marker::Sync for StateCore {}
@@ -44,8 +40,6 @@ impl StateCore {
             channel_sender: RefCell::new(sender),
             channel_reciever: RefCell::new(Arc::new(Mutex::new(receiver))),
             enigo_engine: RefCell::new(Arc::new(Mutex::new(Enigo::new()))),
-            notification: Notification::new(""),
-            notification_identifier: RefCell::new(String::from("")),
         };
     }
 

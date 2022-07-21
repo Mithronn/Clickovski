@@ -5,9 +5,10 @@ import { AnimatePresence } from 'framer-motion'
 import { Provider } from 'react-redux'
 import { listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/tauri'
+import { isPermissionGranted, requestPermission } from '@tauri-apps/api/notification'
 import dynamic from "next/dynamic";
 import localforage from 'localforage';
-import { I18nextProvider, getI18n } from 'react-i18next'
+import { I18nextProvider, getI18n, useTranslation } from 'react-i18next'
 
 import { useStore } from '../redux/store'
 import Launcher from "../components/Launcher.tsx";
@@ -29,6 +30,8 @@ function SafeHydrate({ children }) {
 function App(props) {
     const { Component, pageProps, router } = props;
     const store = useStore(pageProps.initialReduxState);
+    const { t } = useTranslation();
+
     const [MUImode, setMUIMode] = React.useState('light');
 
     const colorMode = React.useMemo(
@@ -59,10 +62,10 @@ function App(props) {
 
         // Notification permission request
         if (router.pathname !== "/update") {
-            window.__TAURI__.notification.isPermissionGranted().then(res => {
+            isPermissionGranted().then(res => {
                 // console.log(res);
                 if (!res) {
-                    window.__TAURI__.notification.requestPermission();
+                    requestPermission();
                 }
             })
         }
@@ -93,9 +96,35 @@ function App(props) {
                     localforage.setItem("settings", JSON.stringify(res ? { ...JSON.parse(res), isStartUp: false } : { ...defaultStoreData, isStartUp: false }));
                 }
             })
+
+            if (router.pathname !== "/update") {
+                isPermissionGranted().then(res => {
+                    if (!res) return;
+
+                    invoke("administation_notification", {
+                        invokeMessage: JSON.stringify({
+                            title: t('attention'),
+                            body: t('not_admin_text'),
+                        })
+                    });
+                })
+            }
         }).catch(async err => {
             localforage.setItem("settings", JSON.stringify(defaultStoreData))
             await getI18n().changeLanguage("English");
+
+            if (router.pathname !== "/update") {
+                isPermissionGranted().then(res => {
+                    if (!res) return;
+
+                    invoke("administation_notification", {
+                        invokeMessage: JSON.stringify({
+                            title: t('attention'),
+                            body: t('not_admin_text'),
+                        })
+                    });
+                })
+            }
         });
 
         const routeSettingsListen = listen("routeSettings", routeSettings);

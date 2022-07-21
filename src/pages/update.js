@@ -121,7 +121,7 @@ function Update(props) {
                                 <div data-tauri-drag-region className="flex w-full flex-col space-y-3 items-center justify-center">
                                     <div data-tauri-drag-region className="flex w-full flex-row space-x-4 items-center justify-center">
                                         <p data-tauri-drag-region className={`font-Readex ${theme ? "text-white" : "text-black"}`}>v{isUpdateInfo.version}</p>
-                                        <p data-tauri-drag-region className={`font-Readex ${theme ? "text-white" : "text-black"}`}>{isUpdateInfo.releaseDate ? String(moment(isUpdateInfo.releaseDate).format('DD-MM-YYYY')) : "Unknown"}</p>
+                                        <p data-tauri-drag-region className={`font-Readex ${theme ? "text-white" : "text-black"}`}>{isUpdateInfo.releaseDate ? String(moment(new Date(isUpdateInfo.releaseDate).getTime()).format('DD-MM-YYYY')) : "Unknown"}</p>
                                     </div>
 
                                     <div data-tauri-drag-region className="w-full items-center justify-center flex flex-row space-x-6">
@@ -145,7 +145,7 @@ function Update(props) {
                                     <div data-tauri-drag-region className="flex w-full flex-col space-y-3 items-center justify-center">
                                         <div data-tauri-drag-region className="flex w-full flex-row space-x-4 items-center justify-center">
                                             <p data-tauri-drag-region className={`font-Readex ${theme ? "text-white" : "text-black"}`}>v{isUpdateInfo.version}</p>
-                                            <p data-tauri-drag-region className={`font-Readex ${theme ? "text-white" : "text-black"}`}>{isUpdateInfo.releaseDate ? String(moment(isUpdateInfo.releaseDate).format('DD-MM-YYYY')) : "Unknown"}</p>
+                                            <p data-tauri-drag-region className={`font-Readex ${theme ? "text-white" : "text-black"}`}>{isUpdateInfo.releaseDate ? String(moment(new Date(isUpdateInfo.releaseDate).getTime()).format('DD-MM-YYYY')) : "Unknown"}</p>
                                         </div>
 
                                         <div data-tauri-drag-region className="w-full flex flex-row space-x-4 items-center justify-center">

@@ -12,7 +12,15 @@ use tauri_plugin_autostart::MacosLauncher;
 
 mod dsl;
 mod script_core;
+mod windows;
+
+use crate::windows::win::is_app_elevated;
 use script_core::StateCore;
+
+#[derive(Clone, serde::Serialize)]
+struct Payload {
+    message: String,
+}
 
 #[tauri::command]
 fn start_launcher(state_core: State<'_, StateCore>) -> bool {
@@ -50,11 +58,7 @@ fn change_key_type(state_core: State<'_, StateCore>, invoke_message: String) {
 }
 
 #[tauri::command]
-fn show_notification(
-    _state_core: State<'_, StateCore>,
-    app_handle: tauri::AppHandle,
-    invoke_message: String,
-) {
+fn show_notification(app_handle: tauri::AppHandle, invoke_message: String) {
     let v: Value = serde_json::from_str(&invoke_message).unwrap();
     let notification = Notification::new(&app_handle.config().tauri.bundle.identifier)
         .body(v.get("body").and_then(|value| value.as_str()).unwrap());
@@ -113,6 +117,19 @@ fn global_shortcut_register(app_handle: tauri::AppHandle, invoke_message: bool) 
         .unwrap();
 }
 
+#[tauri::command]
+fn administation_notification(app_handle: tauri::AppHandle, invoke_message: String) {
+    let v: Value = serde_json::from_str(&invoke_message).unwrap();
+
+    if !is_app_elevated() {
+        Notification::new(&app_handle.config().tauri.bundle.identifier)
+            .title(v.get("title").and_then(|value| value.as_str()).unwrap())
+            .body(v.get("body").and_then(|value| value.as_str()).unwrap())
+            .show()
+            .unwrap();
+    }
+}
+
 fn main() {
     // App Tray Construction
     let clickovski_label = CustomMenuItem::new("clickovski".to_string(), "Clickovski").disabled();
@@ -130,7 +147,6 @@ fn main() {
 
     let builder = tauri::Builder::default();
     builder
-        .manage(StateCore::new())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
             false,
@@ -147,8 +163,13 @@ fn main() {
             open_updater_on_mount,
             start_stop_global_shortcut_pressed,
             global_shortcut_register,
+            administation_notification,
         ])
-        .setup(|_app| Ok(()))
+        .setup(|app| {
+            app.manage(StateCore::new());
+
+            Ok(())
+        })
         .on_system_tray_event(|app, event| match event {
             SystemTrayEvent::LeftClick {
                 position: _,
