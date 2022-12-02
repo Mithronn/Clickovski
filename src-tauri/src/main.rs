@@ -149,7 +149,7 @@ fn main() {
     builder
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
-            false,
+            None,
         ))
         .invoke_handler(tauri::generate_handler![
             start_launcher,

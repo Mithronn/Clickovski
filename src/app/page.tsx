@@ -1,6 +1,7 @@
-import React from 'react'
+'use client'
+import * as React from 'react'
 import Head from "next/head";
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { motion } from "framer-motion";
 import { useDispatch, useSelector } from 'react-redux'
 import { Tooltip, ClickAwayListener } from "@mui/material"
@@ -11,14 +12,14 @@ import { useTranslation } from 'react-i18next'
 import dynamic from 'next/dynamic'
 
 import { DownloadIcon, SettingsIcon, RecordIcon, WarningIcon } from "../components/icons";
-import CustomCheckbox from "../components/Checkbox.tsx";
+import CustomCheckbox from "../components/Checkbox";
 import { transition, convertKeyToReadableFromBackend } from "../lib/constants.js";
 import { setMode, setDelay, setKeyType, setKey } from '../redux/actions';
 import useTheme from '../components/useTheme';
 import styles from '../styles/CSS.module.css'
 
 const DynamicImportedMouseSVG = dynamic(
-  () => import('../components/MouseComponent.tsx'),
+  () => import('../components/MouseComponent'),
   { ssr: false }
 )
 
@@ -26,7 +27,7 @@ const DynamicImportedMouseSVG = dynamic(
 const Home = () => {
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  const reduxState = useSelector((state) => state);
+  const reduxState = useSelector((state: any) => state);
   const theme = useTheme()
   const dispatch = useDispatch();
   const [isListeningKeyboard, setListeningKeyboard] = React.useState(false);
@@ -173,9 +174,9 @@ const Home = () => {
     <div
       className={`max-h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] flex flex-col p-6 pb-6 ${theme ? "bg-darkgray" : "bg-white"} duration-150 overflow-x-hidden overflow-y-auto ${!theme ? `${styles.styledScrollbar} ${styles.backgroundImage}` : `${styles.styledScrollbar2} ${styles.backgroundImage2}`}`}
     >
-      <Head>
+      {/* <Head>
         <title>Clickovski</title>
-      </Head>
+      </Head> */}
 
       <div className='w-full relative'>
         {isUpdateState === "Downloaded" ? (
@@ -194,7 +195,7 @@ const Home = () => {
 
         <CustomToolTip title={t('settings')} disableInteractive placement="bottom">
           <motion.button
-            exit={{ left: "0px" }}
+            // exit={{ left: "0px" }}
             animate={{ opacity: 1 }}
             className='group p-2 outline-none focus:outline-none absolute top-0 right-0 opacity-0'
             transition={transition}
@@ -321,10 +322,10 @@ const Home = () => {
                   value={reduxState.isDelay}
                   disabled={reduxState.isStarted || reduxState.isStarting}
                   onChange={(e) => {
-                    if (e.target.value < 0) {
+                    if (Number(e.target.value) < 0) {
                       dispatch(setDelay(1));
                     } else {
-                      dispatch(setDelay(e.target.value));
+                      dispatch(setDelay(Number(e.target.value)));
                     }
                   }}
                   className={`${reduxState.isStarted ? "cursor-not-allowed" : "cursor-text"} ${styles.number_input} appearance-none outline-none focus:outline-none rounded-md pl-2 pt-1 pb-1 font-Readex ${theme ? "text-white bg-darkestgray shadow-xl" : "text-black bg-gray-200 shadow"} duration-150`}

@@ -1,3 +1,4 @@
+'use client';
 import React from 'react'
 import { useTheme as useNextTheme } from "./Theme.tsx";
 

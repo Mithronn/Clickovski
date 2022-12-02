@@ -1,3 +1,4 @@
+'use client';
 import React from 'react'
 import { Tooltip, ClickAwayListener } from "@mui/material"
 import { tooltipClasses } from '@mui/material/Tooltip';

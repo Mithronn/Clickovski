@@ -1,59 +1,42 @@
-import React from 'react';
-import Head from "next/head";
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { AnimatePresence } from 'framer-motion'
+'use client';
+
+import { ReactNode, useState, useMemo, useEffect } from 'react'
 import { Provider } from 'react-redux'
+import { useRouter, usePathname } from 'next/navigation';
+
+import { I18nextProvider, getI18n, useTranslation } from 'react-i18next'
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import localforage from 'localforage';
+
+import { isPermissionGranted, requestPermission } from '@tauri-apps/api/notification'
 import { listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/tauri'
-import { isPermissionGranted, requestPermission } from '@tauri-apps/api/notification'
-import dynamic from "next/dynamic";
-import localforage from 'localforage';
-import { I18nextProvider, getI18n, useTranslation } from 'react-i18next'
 
-import { useStore } from '../redux/store'
-import Launcher from "../components/Launcher.tsx";
-import '../styles/globals.css';
-import { defaultStoreData } from "../lib/constants";
+import { ThemeProvider as ModeThemeProvider } from '../components/Theme'
 import i18n from '../components/i18n'
+import { useStore } from '../redux/store'
+import { PaletteMode } from '@mui/material';
+import { defaultStoreData } from "../lib/constants";
 import { setGlobalShortcutActive, setGlobalShortcut, } from '../redux/actions';
-import { ThemeProvider as ModeThemeProvider } from '../components/Theme.tsx'
 
-function SafeHydrate({ children }) {
-    return (
-        <div suppressHydrationWarning>
-            {typeof window === 'undefined' ? null : children}
-        </div>
-    )
-}
-
-
-function App(props) {
-    const { Component, pageProps, router } = props;
-    const store = useStore(pageProps.initialReduxState);
+export default function Providers({ children, ...props }: { children: ReactNode }) {
+    const [MUImode, setMUIMode] = useState('light');
+    const store = useStore(props?.pageProps?.initialReduxState);
     const { t } = useTranslation();
+    const router = useRouter();
+    const pathname = usePathname();
 
-    const [MUImode, setMUIMode] = React.useState('light');
-
-    const colorMode = React.useMemo(
-        () => ({
-            toggleColorMode: () => {
-                setMUIMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
-            },
-        }),
-        [],
-    );
-
-    const theme = React.useMemo(
+    const theme = useMemo(
         () =>
             createTheme({
                 palette: {
-                    mode: MUImode,
+                    mode: MUImode as PaletteMode,
                 },
             }),
         [MUImode],
     );
 
-    React.useEffect(() => {
+    useEffect(() => {
         const routeSettings = (event) => {
             if (Boolean(event.payload)) {
                 router.push("/settings")
@@ -61,7 +44,7 @@ function App(props) {
         }
 
         // Notification permission request
-        if (router.pathname !== "/update") {
+        if (pathname !== "/update") {
             isPermissionGranted().then(res => {
                 // console.log(res);
                 if (!res) {
@@ -70,7 +53,7 @@ function App(props) {
             })
         }
 
-        localforage.getItem("settings").then(async (res) => {
+        localforage.getItem("settings").then(async (res: any) => {
             if (!res) {
                 localforage.setItem("settings", JSON.stringify(defaultStoreData));
                 localStorage.setItem("theme", "light");
@@ -83,7 +66,6 @@ function App(props) {
 
             // Set Theme
             document.body.style.backgroundColor = JSON.parse(res)?.isDarkMode ? "rgba(32,28,28,1)" : "#ffffff";
-            // document.style.backgroundColor = JSON.parse(res)?.isDarkMode ? "rgba(32,28,28,1)" : "#ffffff";
 
             store.dispatch(setGlobalShortcut(JSON.parse(res || "{}").isShortcut || defaultStoreData.isShortcut));
             await getI18n().changeLanguage(JSON.parse(res || "{}").language || defaultStoreData.language);
@@ -97,7 +79,7 @@ function App(props) {
                 }
             })
 
-            if (router.pathname !== "/update") {
+            if (pathname !== "/update") {
                 isPermissionGranted().then(res => {
                     if (!res) return;
 
@@ -113,7 +95,7 @@ function App(props) {
             localforage.setItem("settings", JSON.stringify(defaultStoreData))
             await getI18n().changeLanguage("English");
 
-            if (router.pathname !== "/update") {
+            if (pathname !== "/update") {
                 isPermissionGranted().then(res => {
                     if (!res) return;
 
@@ -162,38 +144,17 @@ function App(props) {
     }, [])
 
     return (
-        <SafeHydrate>
-            <I18nextProvider i18n={i18n}>
-                <Provider store={store}>
-                    <ThemeProvider theme={theme}>
-                        <ModeThemeProvider
-                            enableSystem={false}
-                            attribute="class"
-                        >
-                            <div className="w-full min-h-screen overflow-hidden">
-                                <Head>
-                                    <title>Clickovski</title>
-                                </Head>
-
-                                <AnimatePresence
-                                    exitBeforeEnter
-                                    initial={false}
-                                    onExitComplete={() => window.scrollTo(0, 0)}
-                                >
-                                    <div key={router.route} className="overflow-hidden">
-                                        <Component {...pageProps} />
-                                    </div>
-                                </AnimatePresence>
-                                <Launcher {...pageProps} key="LAUNCHER" />
-                            </div>
-                        </ModeThemeProvider>
-                    </ThemeProvider>
-                </Provider>
-            </I18nextProvider>
-        </SafeHydrate>
+        <I18nextProvider i18n={i18n}>
+            <Provider store={store}>
+                <ThemeProvider theme={theme}>
+                    <ModeThemeProvider
+                        enableSystem={false}
+                        attribute="class"
+                    >
+                        {children}
+                    </ModeThemeProvider>
+                </ThemeProvider>
+            </Provider>
+        </I18nextProvider>
     )
 }
-
-export default dynamic(() => Promise.resolve(App), {
-    ssr: false,
-});

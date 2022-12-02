@@ -1,24 +1,26 @@
+"use client"
 import React from 'react'
-import { useRouter } from 'next/router'
+import { useRouter, usePathname } from 'next/navigation'
 const { motion, AnimatePresence } = require('framer-motion');
 import { useDispatch, useSelector } from 'react-redux'
 import { emit, listen } from '@tauri-apps/api/event'
 import { getVersion } from '@tauri-apps/api/app';
 import { register, unregister, unregisterAll, isRegistered } from '@tauri-apps/api/globalShortcut'
 import { invoke } from '@tauri-apps/api/tauri'
-import { getI18n, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 import localforage from 'localforage';
 
 import { startLauncher, stopLauncher, setStarting, setErrorMessage } from '../redux/actions';
-import { transition } from "../lib/constants.js";
 import useTheme from '../components/useTheme';
-import { defaultStoreData } from "../lib/constants";
+import { defaultStoreData, transition } from "../lib/constants";
 
 
 function Launcher() {
     const { t, i18n } = useTranslation();
 
     const router = useRouter();
+    const pathname = usePathname();
+
     const reduxState = useSelector((state: any) => state);
     const theme = useTheme();
     const dispatch = useDispatch();
@@ -44,7 +46,7 @@ function Launcher() {
 
         const handleWatchSetShortcutEmitter = (data) => {
             setGlobalShortcutRegistered(true);
-            localforage.getItem("settings").then(async (res) => {
+            localforage.getItem("settings").then(async (res: any) => {
 
                 //register for shortcuts
                 let globalShortcut = JSON.parse(res || "{}").isShortcut || defaultStoreData.isShortcut;
@@ -118,7 +120,7 @@ function Launcher() {
 
     // Version state handler
     React.useEffect(() => {
-        setVersionShow(router.pathname === "/settings" ? true : false);
+        setVersionShow(pathname === "/settings" ? true : false);
     }, [router])
 
     function start(isMode = null, isDelay = null) {
@@ -214,7 +216,7 @@ function Launcher() {
 
     }
 
-    if (router.pathname === "/update") {
+    if (pathname === "/update") {
         return null;
     }
 

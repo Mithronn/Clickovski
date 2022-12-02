@@ -1,3 +1,4 @@
+"use client"
 import React from 'react'
 import Head from "next/head";
 import moment from 'moment';
@@ -7,10 +8,10 @@ import { invoke } from '@tauri-apps/api/tauri'
 
 import { useTranslation } from 'react-i18next'
 
-import LottieAnimation from '../components/LottieAnimation';
-import useTheme from "../components/useTheme";
+import LottieAnimation from '../../components/LottieAnimation';
+import useTheme from "../../components/useTheme";
 
-import RocketAnimation from "../animations/Rocket.json";
+import RocketAnimation from "../../animations/Rocket.json";
 
 function Update(props) {
     const { t } = useTranslation();

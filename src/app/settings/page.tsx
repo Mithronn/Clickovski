@@ -1,6 +1,7 @@
+"use client"
 import React from 'react'
 import Head from "next/head";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     ClickAwayListener,
@@ -13,19 +14,19 @@ import { useTranslation } from 'react-i18next'
 import { invoke } from '@tauri-apps/api/tauri'
 
 
-import { RightIcon, SettingsIcon, RecordIcon } from "../components/icons";
-import { transition, defaultStoreData } from "../lib/constants.js";
-import Flags from "../components/Flags.tsx";
-import styles from "../styles/CSS.module.css";
-import { setLanguage as setLanguageForRedux, setDarkMode as setDarkModeForRedux, setGlobalShortcut } from '../redux/actions';
-import useTheme from "../components/useTheme";
-import { useTheme as useNextTheme } from "../components/Theme.tsx";
+import { RightIcon, SettingsIcon, RecordIcon } from "../../components/icons";
+import { transition, defaultStoreData } from "../../lib/constants";
+import Flags from "../../components/Flags";
+import styles from "../../styles/CSS.module.css";
+import { setLanguage as setLanguageForRedux, setDarkMode as setDarkModeForRedux, setGlobalShortcut } from '../../redux/actions';
+import useTheme from "../../components/useTheme";
+import { useTheme as useNextTheme } from "../../components/Theme";
 
 
-function Settings(props) {
+function Settings() {
     const { t, i18n } = useTranslation();
     const router = useRouter();
-    const reduxState = useSelector((state) => state);
+    const reduxState = useSelector((state: any) => state);
     const { setTheme } = useNextTheme();
     const isDarkMode = useTheme()
     const dispatch = useDispatch();
