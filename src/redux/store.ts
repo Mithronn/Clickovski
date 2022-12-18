@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
-import { legacy_createStore as createStore, applyMiddleware } from 'redux'
+import { legacy_createStore as createStore, applyMiddleware, AnyAction, Store } from 'redux'
 import { composeWithDevTools } from '@redux-devtools/extension'
 import thunkMiddleware from 'redux-thunk'
 import reducers from './reducers'
 
-let store
+let store: Store<any, AnyAction>
 
-function initStore(initialState) {
+function initStore(initialState: any) {
   return createStore(
     reducers,
     initialState,
@@ -14,7 +14,7 @@ function initStore(initialState) {
   )
 }
 
-export const initializeStore = (preloadedState) => {
+export const initializeStore = (preloadedState: any) => {
   let _store = store ?? initStore(preloadedState)
 
   // After navigating to a page with an initial Redux state, merge that state
@@ -36,7 +36,7 @@ export const initializeStore = (preloadedState) => {
   return _store
 }
 
-export function useStore(initialState) {
+export function useStore(initialState: any) {
   const store = useMemo(() => initializeStore(initialState), [initialState])
   return store
 }

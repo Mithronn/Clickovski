@@ -1,22 +1,26 @@
 'use client'
+
 import * as React from 'react'
-import Head from "next/head";
 import { useRouter } from 'next/navigation';
 import { motion } from "framer-motion";
 import { useDispatch, useSelector } from 'react-redux'
 import { Tooltip, ClickAwayListener } from "@mui/material"
-import { tooltipClasses } from '@mui/material/Tooltip';
+import { tooltipClasses, TooltipProps } from '@mui/material/Tooltip';
 import { styled } from '@mui/material/styles';
 import { emit, listen } from '@tauri-apps/api/event'
 import { useTranslation } from 'react-i18next'
 import dynamic from 'next/dynamic'
+
+import { appWindow } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/tauri";
 
 import { DownloadIcon, SettingsIcon, RecordIcon, WarningIcon } from "../components/icons";
 import CustomCheckbox from "../components/Checkbox";
 import { transition, convertKeyToReadableFromBackend } from "../lib/constants.js";
 import { setMode, setDelay, setKeyType, setKey } from '../redux/actions';
 import useTheme from '../components/useTheme';
-import styles from '../styles/CSS.module.css'
+import styles from '../styles/CSS.module.css';
+import Link from 'next/link';
 
 const DynamicImportedMouseSVG = dynamic(
   () => import('../components/MouseComponent'),
@@ -34,28 +38,28 @@ const Home = () => {
   const [isListenedKeys, setListenedKeys] = React.useState(reduxState.isKey ? String(reduxState.isKey).split("+") : []);
   const [timeoutListener, setTimeoutListener] = React.useState(null);
 
-  const KeyboardEventListenerRef = React.useRef();
+  const KeyboardEventListenerRef = React.useRef<HTMLButtonElement>();
 
   const [isUpdateState, setUpdateState] = React.useState("Checking");
 
 
   React.useEffect(() => {
-    const updateState = (event) => {
+    const updateState = (event: any) => {
       setUpdateState(event.payload);
     }
 
-    const updateDownloadedData = (event) => {
-      setUpdateProgress((updateProgress) => {
-        return { ...updateProgress, percent: 0 }
-      });
+    const updateDownloadedData = (event: any) => {
+      // setUpdateProgress((updateProgress) => {
+      //   return { ...updateProgress, percent: 0 }
+      // });
 
-      setUpdateInfo(event.payload);
+      // setUpdateInfo(event.payload);
     }
 
     const updateStateListen = listen("updateState", updateState);
     const updateDownloadedDataListen = listen("updateDownloadedData", updateDownloadedData);
 
-    window.__TAURI__.window.appWindow.setTitle("Clickovski");
+    appWindow.setTitle("Clickovski");
     return () => {
       updateStateListen.then((f) => f());
       updateDownloadedDataListen.then((f) => f());
@@ -63,11 +67,11 @@ const Home = () => {
   }, []);
 
   React.useEffect(() => {
-    window.__TAURI__.invoke('change_delay', { invokeMessage: Number(reduxState.isDelay) });
+    invoke('change_delay', { invokeMessage: Number(reduxState.isDelay) });
   }, [reduxState.isDelay]);
 
   React.useEffect(() => {
-    window.__TAURI__.invoke('change_mode', { invokeMessage: String(reduxState.isMode) });
+    invoke('change_mode', { invokeMessage: String(reduxState.isMode) });
   }, [reduxState.isMode]);
 
   React.useEffect(() => {
@@ -80,11 +84,11 @@ const Home = () => {
       setListenedKeys(["C"])
       dispatch(setKey("C"))
     }
-    window.__TAURI__.invoke('change_key_type', { invokeMessage: String(reduxState.isKeyType) });
+    invoke('change_key_type', { invokeMessage: String(reduxState.isKeyType) });
   }, [reduxState.isKeyType]);
 
   React.useEffect(() => {
-    window.__TAURI__.invoke('change_key', { invokeMessage: convertKeyToReadableFromBackend(reduxState.isKey) });
+    invoke('change_key', { invokeMessage: convertKeyToReadableFromBackend(reduxState.isKey) });
     console.log(convertKeyToReadableFromBackend(reduxState.isKey));
   }, [reduxState.isKey]);
 
@@ -101,7 +105,7 @@ const Home = () => {
         KeyboardEventListenerRef.current.onkeydown = (e) => KeyboardEventListenerFunction(e);
       } else {
         // remove everything after 3rd character
-        let removedKeys = isListenedKeys;
+        let removedKeys: string[] | Set<string> = isListenedKeys;
         if (isListenedKeys.length > 3) {
           setListenedKeys((keys) => [keys[0], keys[1], keys[2]]);
           removedKeys = [isListenedKeys[0], isListenedKeys[1], isListenedKeys[2]];
@@ -156,7 +160,7 @@ const Home = () => {
     emit("updateRequest", true);
   }
 
-  function KeyboardEventListenerFunction(e) {
+  function KeyboardEventListenerFunction(e: any) {
     // console.log(e.key)
     e.preventDefault();
     if (String(e.key).trim() === "") {
@@ -174,10 +178,6 @@ const Home = () => {
     <div
       className={`max-h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] flex flex-col p-6 pb-6 ${theme ? "bg-darkgray" : "bg-white"} duration-150 overflow-x-hidden overflow-y-auto ${!theme ? `${styles.styledScrollbar} ${styles.backgroundImage}` : `${styles.styledScrollbar2} ${styles.backgroundImage2}`}`}
     >
-      {/* <Head>
-        <title>Clickovski</title>
-      </Head> */}
-
       <div className='w-full relative'>
         {isUpdateState === "Downloaded" ? (
           <CustomToolTip title={t('update_available')} disableInteractive placement="bottom">
@@ -193,17 +193,24 @@ const Home = () => {
           </CustomToolTip>
         ) : null}
 
-        <CustomToolTip title={t('settings')} disableInteractive placement="bottom">
-          <motion.button
-            // exit={{ left: "0px" }}
-            animate={{ opacity: 1 }}
-            className='group p-2 outline-none focus:outline-none absolute top-0 right-0 opacity-0'
-            transition={transition}
-            onClick={() => router.push("/settings")}
-          >
-            <SettingsIcon className={`${theme ? "text-white" : "text-black"} duration-150`} width='18' height='18' />
-          </motion.button>
-        </CustomToolTip>
+        <Link
+          href={"/settings"}
+        >
+          <CustomToolTip title={t('settings')} disableInteractive placement="bottom">
+            <div
+              className='p-2 outline-none focus:outline-none absolute top-0 right-0'
+            >
+              <motion.div
+                layoutId="settings-gear"
+                animate={{ opacity: 1 }}
+                className='opacity-0'
+                transition={transition}
+              >
+                <SettingsIcon className={`${theme ? "text-white" : "text-black"} duration-150`} width='18' height='18' />
+              </motion.div>
+            </div>
+          </CustomToolTip>
+        </Link>
       </div>
 
       <div className="h-full w-full flex flex-col space-y-8">
@@ -239,12 +246,10 @@ const Home = () => {
 
           {/* Keyboard */}
           <div className={`flex flex-col space-y-3 duration-150 w-1/2`}>
-            {/* <CustomToolTip title={t("not_available_for_now")} disableInteractive placement="bottom"> */}
             <label className={`flex flex-row space-x-2 items-center ${reduxState.isStarted /*true */ ? "cursor-not-allowed" : "cursor-pointer"}`}>
               <CustomCheckbox disabled={/*true */ reduxState.isStarted} onChange={() => dispatch(setKeyType("Keyboard"))} checked={reduxState.isKeyType === "Keyboard"} />
               <p className={`font-Readex font-bold text-base select-none ${reduxState.isKeyType === "Keyboard" ? "opacity-100" : "opacity-50"} ${theme ? "text-white" : "text-black"} duration-150`}>{t('keyboard')}</p>
             </label>
-            {/* </CustomToolTip> */}
 
             <div className="flex flex-col space-y-2 w-full">
               <ClickAwayListener onClickAway={() => setListeningKeyboard(false)}>
@@ -362,7 +367,7 @@ const Home = () => {
   )
 }
 
-const CustomToolTip = styled(({ className, ...props }) => (
+const CustomToolTip = styled(({ className, ...props }: TooltipProps) => (
   <Tooltip {...props} arrow classes={{ popper: className }} />
 ))(({ theme }) => ({
   [`& .${tooltipClasses.arrow}`]: {

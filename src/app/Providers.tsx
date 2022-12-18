@@ -37,7 +37,8 @@ export default function Providers({ children, ...props }: { children: ReactNode 
     );
 
     useEffect(() => {
-        const routeSettings = (event) => {
+        console.log(pathname);
+        const routeSettings = (event: any) => {
             if (Boolean(event.payload)) {
                 router.push("/settings")
             }
@@ -115,7 +116,7 @@ export default function Providers({ children, ...props }: { children: ReactNode 
         });
 
         // Disable context menu function
-        let contextMenuListener = (event) => {
+        let contextMenuListener = (event: any) => {
             event.preventDefault();
             return false;
         }

@@ -1,6 +1,6 @@
 "use client"
+
 import React from 'react'
-import Head from "next/head";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -11,7 +11,9 @@ import { styled } from '@mui/material/styles';
 import { useDispatch, useSelector } from 'react-redux'
 import localforage from 'localforage';
 import { useTranslation } from 'react-i18next'
-import { invoke } from '@tauri-apps/api/tauri'
+
+import { appWindow } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/tauri";
 
 
 import { RightIcon, SettingsIcon, RecordIcon } from "../../components/icons";
@@ -21,6 +23,7 @@ import styles from "../../styles/CSS.module.css";
 import { setLanguage as setLanguageForRedux, setDarkMode as setDarkModeForRedux, setGlobalShortcut } from '../../redux/actions';
 import useTheme from "../../components/useTheme";
 import { useTheme as useNextTheme } from "../../components/Theme";
+import Link from 'next/link';
 
 
 function Settings() {
@@ -30,7 +33,7 @@ function Settings() {
     const { setTheme } = useNextTheme();
     const isDarkMode = useTheme()
     const dispatch = useDispatch();
-    const KeyboardEventListenerRef = React.useRef();
+    const KeyboardEventListenerRef = React.useRef<HTMLButtonElement>();
 
     const [isActivatedSettings, setActivatedSettings] = React.useState([]);
     const [isLanguage, setLanguage] = React.useState("English");
@@ -41,30 +44,30 @@ function Settings() {
     const [isListenedKeys, setListenedKeys] = React.useState(reduxState.isGlobalShortcut ? String(reduxState.isGlobalShortcut).split("+") : []);
     const [timeoutListener, setTimeoutListener] = React.useState(null);
 
-    const setLanguageFunction = async (item) => {
+    const setLanguageFunction = async (item: any) => {
         setLanguage(item.name);
-        localforage.getItem("settings").then(res => {
+        localforage.getItem("settings").then((res: any) => {
             localforage.setItem("settings", JSON.stringify({ ...JSON.parse(res), language: item.name }))
         }).catch(err => {
-            localforage.setItem("settings", JSON.stringify({ ...JSON.parse(defaultStoreData), language: item.name }))
+            localforage.setItem("settings", JSON.stringify({ ...defaultStoreData, language: item.name }))
         })
         dispatch(setLanguageForRedux(item.name));
         await i18n.changeLanguage(item.name);
-        window.__TAURI__.window.appWindow.setTitle(`Clickovski - ${t('settings')}`);
+        appWindow.setTitle(`Clickovski - ${t('settings')}`);
         setLanguageOpen(!isLanguageOpen);
     }
 
     const setNotifications = () => {
-        localforage.getItem("settings").then(res => {
+        localforage.getItem("settings").then((res: any) => {
             localforage.setItem("settings", JSON.stringify({ ...JSON.parse(res), isNotifications: isActivatedSettings.find(x => x === "isNotifications") ? false : true }))
         }).catch(err => {
-            localforage.setItem("settings", JSON.stringify({ ...JSON.parse(defaultStoreData), isNotifications: isActivatedSettings.find(x => x === "isNotifications") ? false : true }))
+            localforage.setItem("settings", JSON.stringify({ ...defaultStoreData, isNotifications: isActivatedSettings.find(x => x === "isNotifications") ? false : true }))
         })
         !!isActivatedSettings.find(x => x === "isNotifications") ? setActivatedSettings(state => state.filter(x => x !== "isNotifications")) : setActivatedSettings(state => [...state, "isNotifications"]);
     }
 
     const setStartUp = () => {
-        localforage.getItem("settings").then(res => {
+        localforage.getItem("settings").then((res: any) => {
             let startUpState = isActivatedSettings.find(x => x === "isStartUp");
             if (startUpState) {
                 invoke("plugin:autostart|disable").then((a /* this is void */) => { });// tauri plugin function
@@ -73,17 +76,17 @@ function Settings() {
             }
             localforage.setItem("settings", JSON.stringify({ ...JSON.parse(res), isStartUp: startUpState ? false : true }))
         }).catch(err => {
-            localforage.setItem("settings", JSON.stringify({ ...JSON.parse(defaultStoreData), isStartUp: isActivatedSettings.find(x => x === "isStartUp") ? false : true }))
+            localforage.setItem("settings", JSON.stringify({ ...defaultStoreData, isStartUp: isActivatedSettings.find(x => x === "isStartUp") ? false : true }))
         })
         !!isActivatedSettings.find(x => x === "isStartUp") ? setActivatedSettings(state => state.filter(x => x !== "isStartUp")) : setActivatedSettings(state => [...state, "isStartUp"]);
     }
 
     const setDarkModeFunc = () => {
-        localforage.getItem("settings").then(res => {
+        localforage.getItem("settings").then((res: any) => {
             localforage.setItem("settings", JSON.stringify({ ...JSON.parse(res), isDarkMode: isActivatedSettings.find(x => x === "isDarkMode") ? false : true }));
             setTheme(isActivatedSettings.find(x => x === "isDarkMode") ? "light" : "dark")
         }).catch(err => {
-            localforage.setItem("settings", JSON.stringify({ ...JSON.parse(defaultStoreData), isDarkMode: isActivatedSettings.find(x => x === "isDarkMode") ? false : true }))
+            localforage.setItem("settings", JSON.stringify({ ...defaultStoreData, isDarkMode: isActivatedSettings.find(x => x === "isDarkMode") ? false : true }))
             setTheme(isActivatedSettings.find(x => x === "isDarkMode") ? "light" : "dark")
         })
         setDarkMode(isActivatedSettings.find(x => x === "isDarkMode") ? false : true);
@@ -92,7 +95,7 @@ function Settings() {
     }
 
     React.useEffect(() => {
-        localforage.getItem("settings").then(res => {
+        localforage.getItem("settings").then((res: any) => {
             let datas = JSON.parse(res);
             setLanguage(datas.language);
             let array = [];
@@ -125,7 +128,7 @@ function Settings() {
             let datas = defaultStoreData;
         });
 
-        window.__TAURI__.window.appWindow.setTitle(`Clickovski - ${t('settings')}`);
+        appWindow.setTitle(`Clickovski - ${t('settings')}`);
     }, [])
 
     // Global Shortcuts functions
@@ -142,7 +145,7 @@ function Settings() {
                 KeyboardEventListenerRef.current.onkeydown = (e) => KeyboardEventListenerFunction(e);
             } else {
                 // remove everything after 3rd character
-                let removedKeys = isListenedKeys;
+                let removedKeys: string[] | Set<string> = isListenedKeys;
                 if (isListenedKeys.length > 3) {
                     setListenedKeys((keys) => [keys[0], keys[1], keys[2]]);
                     removedKeys = [isListenedKeys[0], isListenedKeys[1], isListenedKeys[2]];
@@ -210,18 +213,22 @@ function Settings() {
 
     return (
         <div className={`max-h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] p-6 pb-12 overflow-hidden ${isDarkMode ? "bg-darkgray" : "bg-white"} duration-150 overflow-x-hidden overflow-y-auto ${!isDarkMode ? `${styles.styledScrollbar} ${styles.backgroundImage}` : `${styles.styledScrollbar2} ${styles.backgroundImage2}`}`}>
-            <Head>
+            {/* <Head>
                 <title>Clickovski - {t('settings')}</title>
-            </Head>
+            </Head> */}
 
             <div className='w-full relative h-full'>
                 <motion.button
-                    exit={{ opacity: 0 }}
+                    // exit={{ opacity: 0 }}
                     className='group p-2 outline-none focus:outline-none opacity-100 absolute top-0 left-0 cursor-default'
                     transition={transition}
                     onClick={() => { }}
                 >
-                    <SettingsIcon className={`${isDarkMode ? "text-white" : "text-black"} duration-150`} width='18' height='18' />
+                    <motion.div
+                        layoutId="settings-gear"
+                    >
+                        <SettingsIcon className={`${isDarkMode ? "text-white" : "text-black"} duration-150`} width='18' height='18' />
+                    </motion.div>
                 </motion.button>
 
                 <motion.p
@@ -233,15 +240,16 @@ function Settings() {
                     {t('settings')}
                 </motion.p>
 
-                <motion.button
-                    exit={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={transition}
-                    className='opacity-0 absolute right-0 top-0 p-2 outline-none focus:outline-none'
-                    onClick={() => router.push("/")}
-                >
-                    <RightIcon className={`${isDarkMode ? "text-white" : "text-black"} duration-150`} width='16' height='16' />
-                </motion.button>
+                <Link href={"/"}>
+                    <motion.button
+                        exit={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={transition}
+                        className='opacity-0 absolute right-0 top-0 p-2 outline-none focus:outline-none'
+                    >
+                        <RightIcon className={`${isDarkMode ? "text-white" : "text-black"} duration-150`} width='16' height='16' />
+                    </motion.button>
+                </Link>
             </div>
 
             <motion.div
@@ -256,21 +264,21 @@ function Settings() {
                         <label className="flex flex-row justify-between items-center cursor-pointer">
                             <p className={`font-Readex text-sm select-none cursor-pointer ${isDarkMode ? "text-white" : "text-black"} duration-150`}>{t('start_up')}</p>
                             <AntSwitch
-                                onClick={(event, checked) => setStartUp()}
+                                onClick={() => setStartUp()}
                                 checked={!!isActivatedSettings.find(x => x === "isStartUp")}
                             />
                         </label>
                         <label className="flex flex-row justify-between items-center cursor-pointer">
                             <p className={`font-Readex text-sm select-none cursor-pointer ${isDarkMode ? "text-white" : "text-black"} duration-150`}>{t('show_notifications')}</p>
                             <AntSwitch
-                                onClick={(event, checked) => setNotifications()}
+                                onClick={() => setNotifications()}
                                 checked={!!isActivatedSettings.find(x => x === "isNotifications")}
                             />
                         </label>
                         <label className="flex flex-row justify-between items-center cursor-pointer">
                             <p className={`font-Readex text-sm select-none cursor-pointer ${isDarkMode ? "text-white" : "text-black"} duration-150`}>{t('dark_mode')}</p>
                             <AntSwitch
-                                onClick={(event, checked) => setDarkModeFunc()}
+                                onClick={() => setDarkModeFunc()}
                                 checked={!!isActivatedSettings.find(x => x === "isDarkMode")}
                             />
                         </label>

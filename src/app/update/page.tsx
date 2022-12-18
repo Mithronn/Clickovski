@@ -1,6 +1,6 @@
 "use client"
+
 import React from 'react'
-import Head from "next/head";
 import moment from 'moment';
 import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
 import { relaunch } from '@tauri-apps/api/process'
@@ -13,10 +13,14 @@ import useTheme from "../../components/useTheme";
 
 import RocketAnimation from "../../animations/Rocket.json";
 
-function Update(props) {
+type AnyObject = {
+    [name: string]: any
+}
+
+function Update() {
     const { t } = useTranslation();
     const [isUpdateState, setUpdateState] = React.useState("Checking");
-    const [isUpdateInfo, setUpdateInfo] = React.useState({});
+    const [isUpdateInfo, setUpdateInfo] = React.useState<AnyObject>({});
     const [isUpdateProgress, setUpdateProgress] = React.useState({ percent: 0 });
     const theme = useTheme();
 
@@ -71,12 +75,8 @@ function Update(props) {
     }, []);
 
     return (
-        <div data-tauri-drag-region style={{ WebkitAppRegion: "drag" }} className={`w-full min-h-screen flex items-center justify-center flex-col space-y-6 ${theme ? "bg-darkgray" : "bg-white"}`}>
-            <Head>
-                <title>Clickovski Updater</title>
-            </Head>
-
-            <LottieAnimation data-tauri-drag-region loop="true" JSONFile={props.RocketAnimation} className="w-60 h-60" startFrame={45} stopFrame={110} speed={0.5} />
+        <div data-tauri-drag-region className={`w-full min-h-screen flex items-center justify-center flex-col space-y-6 ${theme ? "bg-darkgray" : "bg-white"}`}>
+            <LottieAnimation data-tauri-drag-region loop="true" JSONFile={RocketAnimation} className="w-60 h-60" startFrame={45} stopFrame={110} speed={0.5} />
 
             <div data-tauri-drag-region className="flex flex-col items-center justify-center space-y-3 w-full">
                 <p data-tauri-drag-region className={`font-Readex font-bold ${theme ? "text-white" : "text-black"} select-none`}>
@@ -162,14 +162,6 @@ function Update(props) {
             </div>
         </div>
     )
-}
-
-export const getStaticProps = async () => {
-    return {
-        props: {
-            RocketAnimation
-        }
-    }
 }
 
 export default Update

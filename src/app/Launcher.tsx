@@ -1,6 +1,7 @@
 "use client"
+
 import React from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 const { motion, AnimatePresence } = require('framer-motion');
 import { useDispatch, useSelector } from 'react-redux'
 import { emit, listen } from '@tauri-apps/api/event'
@@ -17,8 +18,6 @@ import { defaultStoreData, transition } from "../lib/constants";
 
 function Launcher() {
     const { t, i18n } = useTranslation();
-
-    const router = useRouter();
     const pathname = usePathname();
 
     const reduxState = useSelector((state: any) => state);
@@ -36,7 +35,7 @@ function Launcher() {
             setVersion("");
         });
 
-        const handleWatchShortcutStartStopListen = (data) => {
+        const handleWatchShortcutStartStopListen = (data: any) => {
             if (!data.payload.isRunning) {
                 start(data.isMode, data.isDelay);
             } else {
@@ -44,7 +43,7 @@ function Launcher() {
             }
         };
 
-        const handleWatchSetShortcutEmitter = (data) => {
+        const handleWatchSetShortcutEmitter = (data: any) => {
             setGlobalShortcutRegistered(true);
             localforage.getItem("settings").then(async (res: any) => {
 
@@ -121,7 +120,7 @@ function Launcher() {
     // Version state handler
     React.useEffect(() => {
         setVersionShow(pathname === "/settings" ? true : false);
-    }, [router])
+    }, [pathname])
 
     function start(isMode = null, isDelay = null) {
         dispatch(setErrorMessage(""));
@@ -217,7 +216,7 @@ function Launcher() {
     }
 
     if (pathname === "/update") {
-        return null;
+        return <div></div>;
     }
 
     return (
@@ -245,7 +244,7 @@ function Launcher() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={transition}
+                        transition={Object.assign(transition, { duration: 0.3 })}
                     >
                         <p className="font-Readex text-gray-400 text-xs font-bold select-none">{isVersion}</p>
                     </motion.div>

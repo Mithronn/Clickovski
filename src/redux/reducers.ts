@@ -1,3 +1,4 @@
+import { AnyAction } from 'redux'
 import * as types from './types'
 
 // INITIAL LAUNCHER STATE
@@ -18,7 +19,7 @@ const initialLauncherState = {
 }
 
 // LAUNCHER REDUCER
-const launcherReducer = (state = initialLauncherState, { type, payload }) => {
+const launcherReducer = (state = initialLauncherState, { type, payload }: AnyAction) => {
     switch (type) {
         case types.STARTING:
             return {
