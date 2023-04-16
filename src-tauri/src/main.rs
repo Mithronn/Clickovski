@@ -47,7 +47,7 @@ fn change_key(state_core: State<'_, StateCore>, invoke_message: String) {
 }
 
 #[tauri::command]
-fn change_key_type(state_core: State<'_, StateCore>, invoke_message: String) {
+fn change_key_type(state_core: State<StateCore>, invoke_message: String) {
     state_core.set_key_type(&invoke_message);
 }
 
@@ -99,7 +99,7 @@ async fn close_updater_and_open_main(window: tauri::Window, app_handle: tauri::A
 
 #[tauri::command]
 fn start_stop_global_shortcut_pressed(
-    state_core: State<'_, StateCore>,
+    state_core: State<StateCore>,
     app_handle: tauri::AppHandle,
     invoke_message: bool,
 ) {
@@ -227,13 +227,15 @@ fn main() {
 
                             if !window.is_visible().unwrap() {
                                 window.show().unwrap();
+                                window.center().unwrap();
+
                                 item_handle.set_title("Hide").unwrap();
                                 window.set_focus().unwrap();
                             } else {
                                 window.hide().unwrap();
+
                                 // you can also `set_selected`, `set_enabled` and `set_native_image` (macOS only).
                                 item_handle.set_title("Show").unwrap();
-                                window.set_focus().unwrap();
                             }
                         }
                     }
@@ -248,6 +250,7 @@ fn main() {
 
                             if !window.is_visible().unwrap() {
                                 window.show().unwrap();
+                                window.center().unwrap();
 
                                 app.tray_handle()
                                     .get_item(&"hide")

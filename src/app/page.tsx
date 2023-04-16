@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Metadata } from "next";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import { Tooltip, ClickAwayListener } from "@mui/material";
@@ -40,9 +40,8 @@ export const metadata: Metadata = {
 };
 
 const Home = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
-  const pathname = usePathname();
 
   const reduxState = useSelector((state: any) => state);
   const theme = useTheme();
@@ -130,7 +129,7 @@ const Home = () => {
           KeyboardEventListenerFunction(e);
       } else {
         // remove everything after 3rd character
-        let removedKeys = isListenedKeys;
+        let removedKeys: string[] | Set<string> = isListenedKeys;
         if (isListenedKeys.length > 3) {
           setListenedKeys((keys) => [keys[0], keys[1], keys[2]]);
           removedKeys = [
@@ -341,7 +340,6 @@ const Home = () => {
                 {t("keyboard")}
               </p>
             </label>
-            {/* </CustomToolTip> */}
 
             <div className="flex flex-col space-y-2 w-full">
               <ClickAwayListener
@@ -509,7 +507,7 @@ const Home = () => {
                 <input
                   type="number"
                   name="withTimerDelay"
-                  min={10}
+                  min={1}
                   value={reduxState.isDelay}
                   disabled={reduxState.isStarted || reduxState.isStarting}
                   onChange={(e) => {
@@ -608,7 +606,7 @@ const Home = () => {
   );
 };
 
-const CustomToolTip = styled(({ className, ...props }) => (
+const CustomToolTip = styled(({ className, ...props }: TooltipProps) => (
   <Tooltip {...props} arrow classes={{ popper: className }} />
 ))(({ theme }) => ({
   [`& .${tooltipClasses.arrow}`]: {

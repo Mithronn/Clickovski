@@ -1,9 +1,8 @@
 'use client';
 import React from 'react'
 import { Tooltip, ClickAwayListener } from "@mui/material"
-import { tooltipClasses } from '@mui/material/Tooltip';
+import { tooltipClasses, TooltipProps } from '@mui/material/Tooltip';
 import { styled } from '@mui/material/styles';
-import { getI18n, useTranslation } from 'react-i18next'
 
 interface MouseComponentProps {
     theme: boolean
@@ -15,8 +14,6 @@ interface MouseComponentProps {
 
 
 function MouseComponent({ theme, activeKey, isDisabled, onPathClick, isRunning }: MouseComponentProps) {
-    const { t, i18n } = useTranslation();
-
     return (
         <div className={`${isDisabled || isRunning ? "opacity-50" : "opacity-100"} duration-150`}>
             <svg
@@ -40,7 +37,7 @@ c0-10.4-6.9-19.1-16.3-22c0,0,0,0,0,0V16c0,0,0,0,0,0h5.6c58.8,0,106.4,47.6,106.4,
                 <path d="M107,195" />
 
                 {/* Left button */}
-                <CustomToolTip2 title={"MB1"} disableInteractive placement="left">
+                <CustomToolTip2 title={"MB1"} disableInteractive disableHoverListener={isDisabled || isRunning} placement="left">
                     <path
                         onClick={() => { if (!isDisabled) onPathClick("Left") }}
                         className={`${!isDisabled && "cursor-pointer"} ${theme ? activeKey === "Left" ? `fill-blue-600 ${!isDisabled && "hover:fill-blue-700"}` : `fill-gray-600 ${!isDisabled && "hover:fill-gray-700"}` : activeKey === "Left" ? `fill-blue-400 ${!isDisabled && "hover:fill-blue-500"}` : `fill-gray-200 ${!isDisabled && "hover:fill-gray-300"}`} duration-150`}
@@ -51,7 +48,7 @@ c0,1.1,0.1,2.7,0.1,4.6c0.1,3.4,0.1,6,0,14.1c0,7.9,0,11.9,0,12c-0.1,1.6-0.2,4,0,7
 C202.3,189.8,203.9,191.5,207.4,192.1z"/>
                 </CustomToolTip2>
 
-                <CustomToolTip2 title={"MB3"} disableInteractive placement="right">
+                <CustomToolTip2 title={"MB3"} disableInteractive disableHoverListener={isDisabled || isRunning} placement="right">
 
                     {/* Right button */}
                     <path
@@ -66,7 +63,7 @@ C212.4,191.3,209.8,191.8,208.8,192z"/>
                 <path d="M212.1,80.5" />
 
                 {/* Middle button */}
-                <CustomToolTip /*title={t('not_available_for_now')}*/ title="MB2" disableInteractive placement="top">
+                <CustomToolTip title="MB2" disableInteractive disableHoverListener={isDisabled || isRunning} placement="top">
                     <path
                         onClick={() => { if (!isDisabled) onPathClick("Middle") }}
                         className={`${!isDisabled && /*"cursor-not-allowed"*/ "cursor-pointer"} ${theme ? activeKey === "Middle" ? `fill-blue-600 ${!isDisabled && "hover:fill-blue-700"}` : `fill-gray-600 ${!isDisabled && "hover:fill-gray-700"}` : activeKey === "Middle" ? `fill-blue-400 ${!isDisabled && "hover:fill-blue-500"}` : `fill-gray-200 ${!isDisabled && "hover:fill-gray-300"}`} duration-150`}
@@ -79,7 +76,7 @@ C217.2,68.8,216.8,72.3,216.8,72.7z"/>
     )
 }
 
-const CustomToolTip = styled(({ className, ...props }: { className: string }) => (
+const CustomToolTip = styled(({ className, ...props }: TooltipProps) => (
     <Tooltip {...props} arrow classes={{ popper: className }} />
 ))(({ theme }) => ({
     [`& .${tooltipClasses.arrow}`]: {
@@ -96,7 +93,7 @@ const CustomToolTip = styled(({ className, ...props }: { className: string }) =>
     },
 }));
 
-const CustomToolTip2 = styled(({ className, ...props }: { className: string }) => (
+const CustomToolTip2 = styled(({ className, ...props }: TooltipProps) => (
     <Tooltip {...props} arrow classes={{ popper: className }} />
 ))(({ theme }) => ({
     [`& .${tooltipClasses.arrow}`]: {

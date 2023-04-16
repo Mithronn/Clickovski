@@ -1,9 +1,9 @@
 "use client";
 import React from "react";
-import { useRouter, usePathname } from "next/navigation";
-const { motion, AnimatePresence } = require("framer-motion");
+import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
-import { emit, listen } from "@tauri-apps/api/event";
+import { listen } from "@tauri-apps/api/event";
 import { getVersion } from "@tauri-apps/api/app";
 import {
   register,
@@ -21,14 +21,12 @@ import {
   stopLauncher,
   setStarting,
   setErrorMessage,
-} from "../redux/actions";
-import useTheme from "../components/useTheme";
-import { defaultStoreData, transition } from "../lib/constants";
+} from "@/redux/actions";
+import useTheme from "@/components/useTheme";
+import { defaultStoreData, transition } from "@/lib/constants";
 
 function Launcher() {
-  const { t, i18n } = useTranslation();
-
-  const router = useRouter();
+  const { t } = useTranslation();
   const pathname = usePathname();
 
   const reduxState = useSelector((state: any) => state);
