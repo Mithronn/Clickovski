@@ -15,16 +15,10 @@ mod script_core;
 mod windows;
 
 use crate::windows::win::is_app_elevated;
-use script_core::StateCore;
-
-#[derive(Clone, serde::Serialize)]
-struct Payload {
-    message: String,
-}
+use script_core::{MacroMode, StateCore};
 
 #[tauri::command]
 fn start_launcher(state_core: State<'_, StateCore>) -> bool {
-    // let v: Value = serde_json::from_str(&invoke_message).unwrap();
     state_core.start_launcher();
 
     return true;
@@ -59,12 +53,22 @@ fn change_key_type(state_core: State<'_, StateCore>, invoke_message: String) {
 
 #[tauri::command]
 fn show_notification(app_handle: tauri::AppHandle, invoke_message: String) {
-    let v: Value = serde_json::from_str(&invoke_message).unwrap();
+    let v: Value = serde_json::from_str(&invoke_message).unwrap_or(serde_json::Value::Null);
     let notification = Notification::new(&app_handle.config().tauri.bundle.identifier)
-        .body(v.get("body").and_then(|value| value.as_str()).unwrap());
-    if v.as_object().unwrap().contains_key("title") {
+        .body(v.get("body").and_then(|value| value.as_str()).unwrap_or(""));
+
+    // if has a title property assign it to the notification and then show it
+    // otherwise directly show it
+    if v.as_object()
+        .and_then(|x| Some(x.contains_key("title")))
+        .unwrap_or(false)
+    {
         notification
-            .title(v.get("title").and_then(|value| value.as_str()).unwrap())
+            .title(
+                v.get("title")
+                    .and_then(|value| value.as_str())
+                    .unwrap_or(""),
+            )
             .show()
             .unwrap();
     } else {
@@ -80,19 +84,17 @@ async fn open_updater_on_mount(window: tauri::Window) {
 }
 
 #[tauri::command]
-async fn close_updater_and_open_main(window: tauri::Window) {
+async fn close_updater_and_open_main(window: tauri::Window, app_handle: tauri::AppHandle) {
     // Close update screen
     if let Some(update_screen) = window.get_window("updatescreen") {
         update_screen.close().unwrap();
     }
     // Show main window
-    window.get_window("main").unwrap().show().unwrap();
+    if let Some(main_window) = window.get_window("main") {
+        main_window.show().unwrap();
+    }
     // activate shortcut to main screen
-    window
-        .get_window("main")
-        .unwrap()
-        .emit("activate_shortcuts", true)
-        .unwrap();
+    app_handle.emit_all("activate_shortcuts", true).unwrap();
 }
 
 #[tauri::command]
@@ -101,10 +103,25 @@ fn start_stop_global_shortcut_pressed(
     app_handle: tauri::AppHandle,
     invoke_message: bool,
 ) {
+    let is_running_ref = state_core.is_program_running.borrow();
+    let is_mode_ref = state_core.mode.borrow();
+    let is_delay_ref = state_core.delay_for_notifications.borrow();
+
+    let is_running = *is_running_ref;
+    let is_mode = match *is_mode_ref {
+        MacroMode::Timer => "withTimer",
+        MacroMode::Toggle => "withToggle",
+    };
+    let is_delay = is_delay_ref.clone();
+
+    drop(is_running_ref);
+    drop(is_mode_ref);
+    drop(is_delay_ref);
+
     let data = serde_json::json!({
-        "isRunning": *state_core.is_program_running.borrow(),
-        "isMode": &*state_core.mode.borrow(),
-        "isDelay":&*state_core.delay_for_notifications.borrow(),
+        "isRunning": is_running,
+        "isMode": is_mode,
+        "isDelay": is_delay,
     });
 
     app_handle.emit_all("start_stop_event", data).unwrap();
@@ -119,12 +136,16 @@ fn global_shortcut_register(app_handle: tauri::AppHandle, invoke_message: bool) 
 
 #[tauri::command]
 fn administation_notification(app_handle: tauri::AppHandle, invoke_message: String) {
-    let v: Value = serde_json::from_str(&invoke_message).unwrap();
+    let v: Value = serde_json::from_str(&invoke_message).unwrap_or(serde_json::Value::Null);
 
     if !is_app_elevated() {
         Notification::new(&app_handle.config().tauri.bundle.identifier)
-            .title(v.get("title").and_then(|value| value.as_str()).unwrap())
-            .body(v.get("body").and_then(|value| value.as_str()).unwrap())
+            .title(
+                v.get("title")
+                    .and_then(|value| value.as_str())
+                    .unwrap_or(""),
+            )
+            .body(v.get("body").and_then(|value| value.as_str()).unwrap_or(""))
             .show()
             .unwrap();
     }
@@ -176,10 +197,15 @@ fn main() {
                 size: _,
                 ..
             } => {
-                let window = app.get_window("main").unwrap();
                 let item_handle = app.tray_handle().get_item(&"hide");
 
-                if !window.windows().contains_key("updatescreen") {
+                if !app
+                    .get_window("main")
+                    .as_ref()
+                    .and_then(|x| Some(x.windows().contains_key("updatescreen")))
+                    .unwrap_or(true)
+                {
+                    let window = app.get_window("main").unwrap();
                     if !window.is_visible().unwrap() {
                         window.show().unwrap();
                         item_handle.set_title("Hide").unwrap();
@@ -191,9 +217,14 @@ fn main() {
                 let item_handle = app.tray_handle().get_item(&id);
                 match id.as_str() {
                     "hide" => {
-                        let window = app.get_window("main").unwrap();
+                        if !app
+                            .get_window("main")
+                            .as_ref()
+                            .and_then(|x| Some(x.windows().contains_key("updatescreen")))
+                            .unwrap_or(true)
+                        {
+                            let window = app.get_window("main").unwrap();
 
-                        if !window.windows().contains_key("updatescreen") {
                             if !window.is_visible().unwrap() {
                                 window.show().unwrap();
                                 item_handle.set_title("Hide").unwrap();
@@ -207,9 +238,14 @@ fn main() {
                         }
                     }
                     "settings" => {
-                        let window = app.get_window("main").unwrap();
+                        if !app
+                            .get_window("main")
+                            .as_ref()
+                            .and_then(|x| Some(x.windows().contains_key("updatescreen")))
+                            .unwrap_or(true)
+                        {
+                            let window = app.get_window("main").unwrap();
 
-                        if !window.windows().contains_key("updatescreen") {
                             if !window.is_visible().unwrap() {
                                 window.show().unwrap();
 

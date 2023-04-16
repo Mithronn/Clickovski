@@ -5,15 +5,27 @@
     "beforeDevCommand": "npm run start",
     "devPath": "http://localhost:3000",
     "distDir": "../build",
-    "withGlobalTauri": true
+    "withGlobalTauri": false
   },
   "package": {
     "productName": "Clickovski",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   "tauri": {
     "allowlist": {
-      "all": true
+      "all": false,
+      "notification": {
+        "all": true 
+      },
+      "globalShortcut": {
+        "all": true
+      },
+      "app": {
+        "all": true
+      },
+      "window": {
+        "all": true 
+      }
     },
     "systemTray": {
       "iconPath": "icons/icon.png",

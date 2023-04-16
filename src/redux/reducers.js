@@ -18,7 +18,7 @@ const initialLauncherState = {
 }
 
 // LAUNCHER REDUCER
-const launcherReducer = (state = initialLauncherState, { type, payload }) => {
+const launcherReducer = (state = initialLauncherState, { type, payload })=> {
     switch (type) {
         case types.STARTING:
             return {

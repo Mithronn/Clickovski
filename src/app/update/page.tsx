@@ -1,132 +1,208 @@
-"use client"
-import React from 'react'
-import Head from "next/head";
-import moment from 'moment';
-import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
-import { relaunch } from '@tauri-apps/api/process'
-import { invoke } from '@tauri-apps/api/tauri'
+"use client";
 
-import { useTranslation } from 'react-i18next'
+import React from "react";
+import { Metadata } from "next";
+import moment from "moment";
+import { checkUpdate, installUpdate } from "@tauri-apps/api/updater";
+import { relaunch } from "@tauri-apps/api/process";
+import { invoke } from "@tauri-apps/api/tauri";
 
-import LottieAnimation from '../../components/LottieAnimation';
-import useTheme from "../../components/useTheme";
+import { useTranslation } from "react-i18next";
 
-import RocketAnimation from "../../animations/Rocket.json";
+import LottieAnimation from "@/components/LottieAnimation";
+import useTheme from "@/components/useTheme";
+import RocketAnimation from "@/animations/Rocket.json";
 
-function Update(props) {
-    const { t } = useTranslation();
-    const [isUpdateState, setUpdateState] = React.useState("Checking");
-    const [isUpdateInfo, setUpdateInfo] = React.useState({});
-    const [isUpdateProgress, setUpdateProgress] = React.useState({ percent: 0 });
-    const theme = useTheme();
+interface IUpdateInfo {
+  releaseDate: string | undefined;
+  version: string | undefined;
+}
 
-    React.useEffect(() => {
-        // const updateDownloadingData = (event) => {
-        //     setUpdateProgress(event.payload);
-        // }
+export const metadata: Metadata = {
+  title: "Clickovski Updater",
+};
 
-        // const updateDownloadedData = (event) => {
-        //     setUpdateProgress((updateProgress) => {
-        //         return { ...updateProgress, percent: 0 }
-        //     });
+function Update() {
+  const { t } = useTranslation();
+  const [isUpdateState, setUpdateState] = React.useState("Checking");
+  const [isUpdateInfo, setUpdateInfo] = React.useState<IUpdateInfo>();
+  const theme = useTheme();
 
-        //     setUpdateInfo(event.payload);
-        // }
+  React.useEffect(() => {
+    // Hide update window on mount to prevent white screen
+    invoke("open_updater_on_mount");
 
-        // Hide update window on mount to prevent white screen
-        invoke("open_updater_on_mount");
+    (async () => {
+      try {
+        const { shouldUpdate, manifest } = await checkUpdate();
+        if (!shouldUpdate) {
+          invoke("global_shortcut_register", { invokeMessage: true });
+          return invoke("close_updater_and_open_main");
+        }
+        if (shouldUpdate) {
+          setUpdateInfo({
+            releaseDate: manifest?.date,
+            version: manifest?.version,
+          });
 
-        (async () => {
-            try {
-                const { shouldUpdate, manifest } = await checkUpdate();
-                if (!shouldUpdate) {
-                    invoke("global_shortcut_register", { invokeMessage: true });
-                    return invoke("close_updater_and_open_main");
-                }
-                if (shouldUpdate) {
-                    setUpdateInfo({
-                        releaseDate: manifest.date,
-                        version: manifest.version
-                    });
+          setUpdateState("Downloading");
 
-                    setUpdateState("Downloading");
+          await installUpdate();
 
-                    //TODO: update-download-progress
-                    //  listen("tauri://update-download-progress", (e) => {
-                    //       e.payload
-                    //   })
+          // install complete, restart the app
+          await relaunch();
+        }
+      } catch (error) {
+        console.log(error);
+        invoke("global_shortcut_register", { invokeMessage: true });
+        return invoke("close_updater_and_open_main");
+      }
+    })();
+  }, []);
 
-                    await installUpdate();
+  return (
+    <div
+      data-tauri-drag-region
+      className={`w-full min-h-screen flex items-center justify-center flex-col space-y-6 ${
+        theme ? "bg-darkgray" : "bg-white"
+      }`}
+    >
+      <LottieAnimation
+        data-tauri-drag-region
+        loop="true"
+        JSONFile={RocketAnimation}
+        className="w-60 h-60"
+        startFrame={45}
+        stopFrame={110}
+        speed={0.5}
+      />
 
-                    // install complete, restart the app
-                    await relaunch();
-                }
-            } catch (error) {
-                console.log(error);
-                invoke("global_shortcut_register", { invokeMessage: true });
-                return invoke("close_updater_and_open_main");
-            }
-        })();
+      <div
+        data-tauri-drag-region
+        className="flex flex-col items-center justify-center space-y-3 w-full"
+      >
+        <p
+          data-tauri-drag-region
+          className={`font-Readex font-bold ${
+            theme ? "text-white" : "text-black"
+          } select-none`}
+        >
+          {isUpdateState === "Checking"
+            ? t("checking_for_updates")
+            : isUpdateState === "Available"
+            ? t("updates_downloading")
+            : isUpdateState === "Downloading"
+            ? t("updates_downloading")
+            : t("updates_downloaded")}
+        </p>
 
-    }, []);
+        {isUpdateState === "Checking" ? (
+          <div
+            data-tauri-drag-region
+            className="flex w-full items-center justify-center"
+          >
+            <svg
+              data-tauri-drag-region
+              className="animate-spin h-5 w-5 text-blue-600"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                data-tauri-drag-region
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                data-tauri-drag-region
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+          </div>
+        ) : isUpdateState === "Available" ? (
+          <div
+            data-tauri-drag-region
+            className="flex w-full flex-col space-y-3 items-center justify-center"
+          >
+            <div
+              data-tauri-drag-region
+              className="flex w-full flex-row space-x-4 items-center justify-center"
+            >
+              <p
+                data-tauri-drag-region
+                className={`font-Readex ${theme ? "text-white" : "text-black"}`}
+              >
+                v{isUpdateInfo?.version}
+              </p>
+              <p
+                data-tauri-drag-region
+                className={`font-Readex ${theme ? "text-white" : "text-black"}`}
+              >
+                {isUpdateInfo?.releaseDate
+                  ? String(
+                      moment(isUpdateInfo?.releaseDate).format("DD-MM-YYYY")
+                    )
+                  : "Unknown"}
+              </p>
+            </div>
 
-    return (
-        <div data-tauri-drag-region style={{ WebkitAppRegion: "drag" }} className={`w-full min-h-screen flex items-center justify-center flex-col space-y-6 ${theme ? "bg-darkgray" : "bg-white"}`}>
-            <Head>
-                <title>Clickovski Updater</title>
-            </Head>
+            <div
+              data-tauri-drag-region
+              className="w-full items-center justify-center pl-6 pr-6"
+            >
+              <div
+                data-tauri-drag-region
+                className={`relative w-full rounded-[50px] h-[8px] ${
+                  theme ? "bg-gray-400" : "bg-gray-300"
+                }`}
+              >
+                <div
+                  data-tauri-drag-region
+                  className="absolute rounded-[50px] w-0 h-[8px] bg-blue-600"
+                />
+              </div>
+            </div>
+          </div>
+        ) : isUpdateState === "Downloading" ? (
+          <div
+            data-tauri-drag-region
+            className="flex w-full flex-col space-y-3 items-center justify-center"
+          >
+            <div
+              data-tauri-drag-region
+              className="flex w-full flex-row space-x-4 items-center justify-center"
+            >
+              <p
+                data-tauri-drag-region
+                className={`font-Readex ${theme ? "text-white" : "text-black"}`}
+              >
+                v{isUpdateInfo?.version}
+              </p>
+              <p
+                data-tauri-drag-region
+                className={`font-Readex ${theme ? "text-white" : "text-black"}`}
+              >
+                {isUpdateInfo?.releaseDate
+                  ? String(
+                      moment(
+                        new Date(isUpdateInfo?.releaseDate).getTime()
+                      ).format("DD-MM-YYYY")
+                    )
+                  : "Unknown"}
+              </p>
+            </div>
 
-            <LottieAnimation data-tauri-drag-region loop="true" JSONFile={props.RocketAnimation} className="w-60 h-60" startFrame={45} stopFrame={110} speed={0.5} />
-
-            <div data-tauri-drag-region className="flex flex-col items-center justify-center space-y-3 w-full">
-                <p data-tauri-drag-region className={`font-Readex font-bold ${theme ? "text-white" : "text-black"} select-none`}>
-                    {
-                        isUpdateState === "Checking" ? t('checking_for_updates') :
-                            isUpdateState === "Available" ? t('updates_downloading') :
-                                isUpdateState === "Downloading" ? t('updates_downloading') :
-                                    t('updates_downloaded')
-                    }
-                </p>
-
-                {
-                    isUpdateState === "Checking" ?
-                        (
-                            <div data-tauri-drag-region className="flex w-full items-center justify-center">
-                                <svg data-tauri-drag-region className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle data-tauri-drag-region className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path data-tauri-drag-region className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                            </div>
-                        )
-                        :
-                        isUpdateState === "Available" ?
-                            (
-                                <div data-tauri-drag-region className="flex w-full flex-col space-y-3 items-center justify-center">
-                                    <div data-tauri-drag-region className="flex w-full flex-row space-x-4 items-center justify-center">
-                                        <p data-tauri-drag-region className={`font-Readex ${theme ? "text-white" : "text-black"}`}>v{isUpdateInfo.version}</p>
-                                        <p data-tauri-drag-region className={`font-Readex ${theme ? "text-white" : "text-black"}`}>{isUpdateInfo.releaseDate ? String(moment(isUpdateInfo.releaseDate).format('DD-MM-YYYY')) : "Unknown"}</p>
-                                    </div>
-
-                                    <div data-tauri-drag-region className="w-full items-center justify-center pl-6 pr-6">
-                                        <div data-tauri-drag-region className={`relative w-full rounded-[50px] h-[8px] ${theme ? "bg-gray-400" : "bg-gray-300"}`}>
-                                            <div
-                                                data-tauri-drag-region
-                                                className="absolute rounded-[50px] w-0 h-[8px] bg-blue-600"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                            :
-                            isUpdateState === "Downloading" ?
-                                <div data-tauri-drag-region className="flex w-full flex-col space-y-3 items-center justify-center">
-                                    <div data-tauri-drag-region className="flex w-full flex-row space-x-4 items-center justify-center">
-                                        <p data-tauri-drag-region className={`font-Readex ${theme ? "text-white" : "text-black"}`}>v{isUpdateInfo.version}</p>
-                                        <p data-tauri-drag-region className={`font-Readex ${theme ? "text-white" : "text-black"}`}>{isUpdateInfo.releaseDate ? String(moment(new Date(isUpdateInfo.releaseDate).getTime()).format('DD-MM-YYYY')) : "Unknown"}</p>
-                                    </div>
-
-                                    <div data-tauri-drag-region className="w-full items-center justify-center flex flex-row space-x-6">
-                                        {/* <div className={`relative w-full rounded-[50px] h-[8px] ${theme ? "bg-gray-400" : "bg-gray-300"}`}>
+            <div
+              data-tauri-drag-region
+              className="w-full items-center justify-center flex flex-row space-x-6"
+            >
+              {/* <div className={`relative w-full rounded-[50px] h-[8px] ${theme ? "bg-gray-400" : "bg-gray-300"}`}>
                                             <div
                                                 className="absolute rounded-[50px] w-0 h-[8px] bg-blue-600 duration-150"
                                                 style={{
@@ -134,42 +210,107 @@ function Update(props) {
                                                 }}
                                             />
                                         </div> */}
-                                        <p data-tauri-drag-region className={`font-Readex font-bold ${theme ? "text-white" : "text-black"}`}>{t('downloading')}</p>
-                                        <svg data-tauri-drag-region className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle data-tauri-drag-region className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path data-tauri-drag-region className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                                :
-                                (
-                                    <div data-tauri-drag-region className="flex w-full flex-col space-y-3 items-center justify-center">
-                                        <div data-tauri-drag-region className="flex w-full flex-row space-x-4 items-center justify-center">
-                                            <p data-tauri-drag-region className={`font-Readex ${theme ? "text-white" : "text-black"}`}>v{isUpdateInfo.version}</p>
-                                            <p data-tauri-drag-region className={`font-Readex ${theme ? "text-white" : "text-black"}`}>{isUpdateInfo.releaseDate ? String(moment(new Date(isUpdateInfo.releaseDate).getTime()).format('DD-MM-YYYY')) : "Unknown"}</p>
-                                        </div>
-
-                                        <div data-tauri-drag-region className="w-full flex flex-row space-x-4 items-center justify-center">
-                                            <p data-tauri-drag-region className={`font-Readex ${theme ? "text-white" : "text-black"}`}>{t('finalizing')}</p>
-                                            <svg data-tauri-drag-region className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle data-tauri-drag-region className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                <path data-tauri-drag-region className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                )
-                }
+              <p
+                data-tauri-drag-region
+                className={`font-Readex font-bold ${
+                  theme ? "text-white" : "text-black"
+                }`}
+              >
+                {t("downloading")}
+              </p>
+              <svg
+                data-tauri-drag-region
+                className="animate-spin h-5 w-5 text-blue-600"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  data-tauri-drag-region
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  data-tauri-drag-region
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
             </div>
-        </div>
-    )
+          </div>
+        ) : (
+          <div
+            data-tauri-drag-region
+            className="flex w-full flex-col space-y-3 items-center justify-center"
+          >
+            <div
+              data-tauri-drag-region
+              className="flex w-full flex-row space-x-4 items-center justify-center"
+            >
+              <p
+                data-tauri-drag-region
+                className={`font-Readex ${theme ? "text-white" : "text-black"}`}
+              >
+                v{isUpdateInfo?.version}
+              </p>
+              <p
+                data-tauri-drag-region
+                className={`font-Readex ${theme ? "text-white" : "text-black"}`}
+              >
+                {isUpdateInfo?.releaseDate
+                  ? String(
+                      moment(
+                        new Date(isUpdateInfo?.releaseDate).getTime()
+                      ).format("DD-MM-YYYY")
+                    )
+                  : "Unknown"}
+              </p>
+            </div>
+
+            <div
+              data-tauri-drag-region
+              className="w-full flex flex-row space-x-4 items-center justify-center"
+            >
+              <p
+                data-tauri-drag-region
+                className={`font-Readex ${theme ? "text-white" : "text-black"}`}
+              >
+                {t("finalizing")}
+              </p>
+              <svg
+                data-tauri-drag-region
+                className="animate-spin h-5 w-5 text-blue-600"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  data-tauri-drag-region
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  data-tauri-drag-region
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
-export const getStaticProps = async () => {
-    return {
-        props: {
-            RocketAnimation
-        }
-    }
-}
-
-export default Update
+export default Update;

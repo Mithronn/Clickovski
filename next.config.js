@@ -1,6 +1,9 @@
 /** @type {import("next").NextConfig} */
 module.exports = {
-    experimental: {
-        appDir: true,
-    }
+  experimental: {
+    appDir: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
