@@ -1,49 +1,41 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { useDispatch, useSelector } from "react-redux";
-import { listen } from "@tauri-apps/api/event";
-import { getVersion } from "@tauri-apps/api/app";
-import {
-  register,
-  unregister,
-  unregisterAll,
-  isRegistered,
-} from "@tauri-apps/api/globalShortcut";
-import { invoke } from "@tauri-apps/api/tauri";
 import { useTranslation } from "react-i18next";
-import localforage from "localforage";
+import { motion, AnimatePresence } from "motion/react";
 
-import {
-  Action,
-  startLauncher,
-  stopLauncher,
-  setStarting,
-  setErrorMessage,
-} from "@/redux/actions";
-import useTheme from "@/components/useTheme";
-import { defaultStoreData, transition } from "@/lib/constants";
+import { getVersion } from "@tauri-apps/api/app";
+import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
+
+import { transition } from "@/lib/constants";
+import { useStateStore as useEngineStore } from "@/state/store";
 
 function Launcher() {
   const { t } = useTranslation();
   const pathname = usePathname();
 
-  const reduxState = useSelector((state: any) => state);
-  const theme = useTheme();
-  const dispatch = useDispatch();
+  const setErrorMessage = useEngineStore((state) => state.setErrorMessage);
+  const isErrorMessage = useEngineStore((state) => state.isErrorMessage);
+  const isGlobalShortcut = useEngineStore((state) => state.isGlobalShortcut);
+  const isNotifications = useEngineStore((state) => state.isNotifications);
+  const startLauncher = useEngineStore((state) => state.startLauncher);
+  const stopLauncher = useEngineStore((state) => state.stopLauncher);
+  const setStarting = useEngineStore((state) => state.setStarting);
+  const isStarted = useEngineStore((state) => state.isStarted);
+  const isStateDelay = useEngineStore((state) => state.isDelay);
+  const isStateMode = useEngineStore((state) => state.isMode);
+  const isDarkMode = useEngineStore((state) => state.isDarkMode);
 
-  const [isVersionShow, setVersionShow] = React.useState(false);
-  const [isVersion, setVersion] = React.useState("");
-  const [isGlobalShortcutRegistered, setGlobalShortcutRegistered] =
-    React.useState(false);
+  const [isVersionShow, setVersionShow] = useState(false);
+  const [isVersion, setVersion] = useState("");
 
-  React.useEffect(() => {
+  useEffect(() => {
     getVersion()
       .then((version) => {
         setVersion(String(version).trim() !== "" ? `v${version}` : "");
       })
-      .catch((error) => {
+      .catch((_err) => {
         setVersion("");
       });
 
@@ -55,204 +47,113 @@ function Launcher() {
       }
     };
 
-    const handleWatchSetShortcutEmitter = (data: any) => {
-      setGlobalShortcutRegistered(true);
-      localforage.getItem("settings").then(async (res: any) => {
-        //register for shortcuts
-        let globalShortcut =
-          JSON.parse(res || "{}").isShortcut || defaultStoreData.isShortcut;
-        unregisterAll().then((res1) => {
-          // not registered yet
-          // alert("unregister #1");
-          console.log("unregister #1");
-          register(globalShortcut, (globalShortcut1) => {
-            invoke("start_stop_global_shortcut_pressed", {
-              invokeMessage: true,
-            });
-          })
-            .then(() => {
-              console.log("registered #1");
-            })
-            .catch((err) => {
-              console.log("cant registered trying one more time #1");
-
-              unregister(globalShortcut)
-                .then((res2) => {
-                  // alert("unregister #2");
-                  console.log("unregister #2");
-
-                  register(globalShortcut, (globalShortcut2) => {
-                    invoke("start_stop_global_shortcut_pressed", {
-                      invokeMessage: true,
-                    });
-                  }).catch((err) => {
-                    // alert("cant registered #2");
-                    console.log("cant registered #2");
-                  });
-                })
-                .then(() => {
-                  console.log("registered #2");
-                })
-                .catch((err) => {
-                  console.log("unregister catch error #2");
-                });
-            });
-        });
-      });
-    };
-
     const watchShortcutStartStopListen = listen(
       "start_stop_event",
       handleWatchShortcutStartStopListen
     );
-    const watchSetShortcutEmitter = listen(
-      "global_shortcut_register",
-      handleWatchSetShortcutEmitter
-    );
     return () => {
       watchShortcutStartStopListen.then((f) => f());
-      watchSetShortcutEmitter.then((f) => f());
     };
   }, []);
 
-  //Global shortcut watcher
-  React.useEffect(() => {
-    localforage.getItem("settings").then((res) => {
-      // unregister previous shortcut
-      if (JSON.parse(String(res))?.isShortcut) {
-        let globalShortcut = JSON.parse(String(res)).isShortcut;
-        isRegistered(globalShortcut).then((res1) => {
-          if (res1) {
-            // not registered yet
-            unregister(globalShortcut);
-          }
-        });
-      }
-
-      // set new shortcut to localforage
-      localforage.setItem(
-        "settings",
-        JSON.stringify({
-          ...JSON.parse(String(res)),
-          isShortcut: reduxState.isGlobalShortcut,
-        })
-      );
-
-      // register new shortcut
-      isRegistered(reduxState.isGlobalShortcut).then((res1) => {
-        if (!res1) {
-          // not registered yet
-          // console.log("registering")
-          register(reduxState.isGlobalShortcut, (globalShortcut) => {
-            invoke("start_stop_global_shortcut_pressed", {
-              invokeMessage: true,
-            });
-          });
-        }
-      });
-    });
-  }, [reduxState.isGlobalShortcut]);
-
   // Version state handler
-  React.useEffect(() => {
+  useEffect(() => {
     setVersionShow(pathname === "/settings" ? true : false);
   }, [pathname]);
 
   function start(isMode = null, isDelay = null) {
-    dispatch<Action>(setErrorMessage(""));
+    setErrorMessage("");
 
     if (isDelay) {
       if (isDelay <= 0) {
-        return dispatch<Action>(setErrorMessage("delay_error"));
+        return setErrorMessage("delay_error");
       }
     } else {
-      if (Number(reduxState.isDelay) <= 0) {
-        return dispatch<Action>(setErrorMessage("delay_error"));
+      if (Number(isStateDelay) <= 0) {
+        return setErrorMessage("delay_error");
+
       }
     }
 
-    dispatch<Action>(setStarting(true));
+    setStarting(true);
 
     invoke("start_launcher")
-      .then((res) => {
-        dispatch<Action>(startLauncher());
+      .then((_res) => {
+        startLauncher();
 
-        localforage.getItem("settings").then((res) => {
-          if (JSON.parse(String(res))?.isNotifications) {
-            if (isMode && isMode === "withTimer") {
+        if (isNotifications) {
+          if (isMode && isMode === "withTimer") {
+            invoke("show_notification", {
+              invokeMessage: JSON.stringify({
+                body: t("click_start", {
+                  delay: (1000 / Number(isDelay)).toFixed(1),
+                }),
+              }),
+            });
+          } else if (isMode && isMode === "withToggle") {
+            invoke("show_notification", {
+              invokeMessage: JSON.stringify({
+                body: t("hold_start"),
+              }),
+            });
+          } else {
+            if (isStateMode === "withTimer") {
               invoke("show_notification", {
                 invokeMessage: JSON.stringify({
                   body: t("click_start", {
-                    delay: (1000 / Number(isDelay)).toFixed(1),
+                    delay: (1000 / Number(isStateDelay)).toFixed(1),
                   }),
                 }),
               });
-            } else if (isMode && isMode === "withToggle") {
+            } else if (isStateMode === "withToggle") {
               invoke("show_notification", {
                 invokeMessage: JSON.stringify({
                   body: t("hold_start"),
                 }),
               });
-            } else {
-              if (reduxState.isMode === "withTimer") {
-                invoke("show_notification", {
-                  invokeMessage: JSON.stringify({
-                    body: t("click_start", {
-                      delay: (1000 / Number(reduxState.isDelay)).toFixed(1),
-                    }),
-                  }),
-                });
-              } else if (reduxState.isMode === "withToggle") {
-                invoke("show_notification", {
-                  invokeMessage: JSON.stringify({
-                    body: t("hold_start"),
-                  }),
-                });
-              }
             }
           }
-        });
-        dispatch(setStarting(false));
+        }
+
+        setStarting(false);
       })
       .catch((err) => {
-        dispatch<Action>(setErrorMessage(err));
+        setErrorMessage(String(err));
       });
   }
 
   function stop(isMode = null) {
     invoke("stop_launcher");
-    dispatch<Action>(stopLauncher());
-    localforage.getItem("settings").then((res) => {
-      if (JSON.parse(String(res))?.isNotifications) {
-        if (isMode && isMode === "withTimer") {
+    stopLauncher();
+    if (isNotifications) {
+      if (isMode && isMode === "withTimer") {
+        invoke("show_notification", {
+          invokeMessage: JSON.stringify({
+            body: t("click_stop"),
+          }),
+        });
+      } else if (isMode && isMode === "withToggle") {
+        invoke("show_notification", {
+          invokeMessage: JSON.stringify({
+            body: t("press_and_hold"),
+          }),
+        });
+      } else {
+        if (isStateMode === "withTimer") {
           invoke("show_notification", {
             invokeMessage: JSON.stringify({
               body: t("click_stop"),
             }),
           });
-        } else if (isMode && isMode === "withToggle") {
+        } else if (isStateMode === "withToggle") {
           invoke("show_notification", {
             invokeMessage: JSON.stringify({
               body: t("press_and_hold"),
             }),
           });
-        } else {
-          if (reduxState.isMode === "withTimer") {
-            invoke("show_notification", {
-              invokeMessage: JSON.stringify({
-                body: t("click_stop"),
-              }),
-            });
-          } else if (reduxState.isMode === "withToggle") {
-            invoke("show_notification", {
-              invokeMessage: JSON.stringify({
-                body: t("press_and_hold"),
-              }),
-            });
-          }
         }
       }
-    });
+    }
   }
 
   if (pathname === "/update") {
@@ -261,40 +162,39 @@ function Launcher() {
 
   return (
     <div
-      className={`h-16 border-t-2 border-[rgba(0,0,0,0.05)] relative p-6 flex flex-row items-center justify-between shadow-inner ${
-        theme ? "bg-darkestgray" : "bg-gray-200"
-      } duration-150`}
+      className={`h-16 border-t-2 border-[rgba(0,0,0,0.05)] relative p-6 flex flex-row items-center justify-between shadow-inner ${isDarkMode ? "bg-darkestgray" : "bg-gray-200"
+        } duration-150`}
     >
       <div className="absolute -top-5 left-1/2 -translate-x-1/2">
         <button
-          onClick={() => (reduxState.isStarted ? stop() : start())}
+          onClick={() => (isStarted ? stop() : start())}
           className="select-none outline-none focus:outline-none pl-4 pr-4 pt-2 pb-2 min-w-[100px] flex items-center justify-center rounded-md bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 text-gray-200 font-Readex duration-150"
         >
-          {reduxState.isStarted
+          {isStarted
             ? `${t("stop", {
-                keys:
-                  reduxState.isGlobalShortcut &&
-                  String(
-                    "(" +
-                      String(reduxState.isGlobalShortcut)
-                        .split("+")
-                        .map((value) => value.slice(0, 4))
-                        .join(" + ") +
-                      ")"
-                  ),
-              })}`
+              keys:
+                isGlobalShortcut &&
+                String(
+                  "(" +
+                  String(isGlobalShortcut)
+                    .split("+")
+                    .map((value) => value.slice(0, 4))
+                    .join(" + ") +
+                  ")"
+                ),
+            })}`
             : `${t("start", {
-                keys:
-                  reduxState.isGlobalShortcut &&
-                  String(
-                    "(" +
-                      String(reduxState.isGlobalShortcut)
-                        .split("+")
-                        .map((value) => value.slice(0, 4))
-                        .join(" + ") +
-                      ")"
-                  ),
-              })}`}
+              keys:
+                isGlobalShortcut &&
+                String(
+                  "(" +
+                  String(isGlobalShortcut)
+                    .split("+")
+                    .map((value) => value.slice(0, 4))
+                    .join(" + ") +
+                  ")"
+                ),
+            })}`}
         </button>
       </div>
 
@@ -302,7 +202,7 @@ function Launcher() {
 
       <div className="flex items-center justify-center w-1/2 h-1 absolute left-1/2 top-2/3 -translate-y-2/3 -translate-x-1/2">
         <p className="text-red-500 font-Readex text-xs text-center break-words">
-          {t(reduxState.isErrorMessage)}
+          {t(isErrorMessage)}
         </p>
       </div>
 

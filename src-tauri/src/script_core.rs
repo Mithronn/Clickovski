@@ -41,7 +41,6 @@ pub struct StateCore {
     pub is_program_running: RefCell<bool>,
     pub channel_sender: RefCell<Sender<bool>>,
     pub channel_reciever: RefCell<Arc<Mutex<Receiver<bool>>>>,
-    pub date: Instant,
     pub enigo_engine: RefCell<Arc<Mutex<Enigo>>>,
 }
 
@@ -56,7 +55,6 @@ impl StateCore {
             mode: RefCell::new(MacroMode::Timer),
             delay_for_notifications: RefCell::new(String::from("200")),
             is_program_running: RefCell::new(false),
-            date: Instant::now(),
             channel_sender: RefCell::new(sender),
             channel_reciever: RefCell::new(Arc::new(Mutex::new(receiver))),
             enigo_engine: RefCell::new(Arc::new(Mutex::new(Enigo::new()))),
@@ -188,7 +186,7 @@ impl StateCore {
             "withToggle" => {
                 *self.mode.borrow_mut() = MacroMode::Toggle;
             }
-            _ | "withTimer" => {
+            _ /*| "withTimer" */ => {
                 *self.mode.borrow_mut() = MacroMode::Timer;
             }
         }
@@ -203,7 +201,7 @@ impl StateCore {
             "Keyboard" => {
                 *self.key_type.borrow_mut() = Arc::new(Mutex::new(KeyType::Keyboard));
             }
-            _ | "Mouse" => {
+            _ /*| "Mouse" */ => {
                 *self.key_type.borrow_mut() = Arc::new(Mutex::new(KeyType::Mouse));
             }
         }

@@ -1,55 +1,61 @@
 "use client";
 
-import React from "react";
-import { Metadata } from "next";
-import moment from "moment";
-import { checkUpdate, installUpdate } from "@tauri-apps/api/updater";
-import { relaunch } from "@tauri-apps/api/process";
-import { invoke } from "@tauri-apps/api/tauri";
-
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-
-import LottieAnimation from "@/components/LottieAnimation";
-import useTheme from "@/components/useTheme";
-import RocketAnimation from "@/animations/Rocket.json";
+import moment from "moment";
+import { check } from '@tauri-apps/plugin-updater';
+import { relaunch } from '@tauri-apps/plugin-process';
+import { invoke } from "@tauri-apps/api/core";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 interface IUpdateInfo {
   releaseDate: string | undefined;
   version: string | undefined;
 }
 
-export const metadata: Metadata = {
-  title: "Clickovski Updater",
-};
-
 function Update() {
   const { t } = useTranslation();
-  const [isUpdateState, setUpdateState] = React.useState("Checking");
-  const [isUpdateInfo, setUpdateInfo] = React.useState<IUpdateInfo>();
-  const theme = useTheme();
+  const [isUpdateState, setUpdateState] = useState("Checking");
+  const [isUpdateInfo, setUpdateInfo] = useState<IUpdateInfo>();
 
-  React.useEffect(() => {
-    // Hide update window on mount to prevent white screen
-    invoke("open_updater_on_mount");
-
+  useEffect(() => {
     (async () => {
+      // Hide update window on mount to prevent white screen
+      invoke("open_updater_on_mount");
       try {
-        const { shouldUpdate, manifest } = await checkUpdate();
-        if (!shouldUpdate) {
+        const update = await check();
+        if (!update) {
           invoke("global_shortcut_register", { invokeMessage: true });
           return invoke("close_updater_and_open_main");
         }
-        if (shouldUpdate) {
+        if (update) {
           setUpdateInfo({
-            releaseDate: manifest?.date,
-            version: manifest?.version,
+            releaseDate: update?.date,
+            version: update?.version,
           });
 
           setUpdateState("Downloading");
 
-          await installUpdate();
+          let downloaded = 0;
+          let contentLength = 0;
+          // alternatively we could also call update.download() and update.install() separately
+          await update.downloadAndInstall((event) => {
+            switch (event.event) {
+              case 'Started':
+                contentLength = event.data.contentLength || 0;
+                console.log(`started downloading ${event.data.contentLength} bytes`);
+                break;
+              case 'Progress':
+                downloaded += event.data.chunkLength;
+                console.log(`downloaded ${downloaded} from ${contentLength}`);
+                break;
+              case 'Finished':
+                console.log('download finished');
+                break;
+            }
+          });
 
-          // install complete, restart the app
+          console.log('update installed');
           await relaunch();
         }
       } catch (error) {
@@ -63,17 +69,15 @@ function Update() {
   return (
     <div
       data-tauri-drag-region
-      className={`w-full min-h-screen flex items-center justify-center flex-col space-y-6 ${
-        theme ? "bg-darkgray" : "bg-white"
-      }`}
+      className={`w-full min-h-screen flex items-center justify-center flex-col space-y-6 dark:bg-darkgray bg-white`}
     >
-      <LottieAnimation
+      <DotLottieReact
         data-tauri-drag-region
-        loop="true"
-        JSONFile={RocketAnimation}
+        loop={true}
+        autoplay={true}
+        src="/animations/rocket.lottie"
         className="w-60 h-60"
-        startFrame={45}
-        stopFrame={110}
+        segment={[45, 110]}
         speed={0.5}
       />
 
@@ -83,17 +87,15 @@ function Update() {
       >
         <p
           data-tauri-drag-region
-          className={`font-Readex font-bold ${
-            theme ? "text-white" : "text-black"
-          } select-none`}
+          className={`font-Readex font-bold dark:text-white text-black select-none`}
         >
           {isUpdateState === "Checking"
             ? t("checking_for_updates")
             : isUpdateState === "Available"
-            ? t("updates_downloading")
-            : isUpdateState === "Downloading"
-            ? t("updates_downloading")
-            : t("updates_downloaded")}
+              ? t("updates_downloading")
+              : isUpdateState === "Downloading"
+                ? t("updates_downloading")
+                : t("updates_downloaded")}
         </p>
 
         {isUpdateState === "Checking" ? (
@@ -136,18 +138,18 @@ function Update() {
             >
               <p
                 data-tauri-drag-region
-                className={`font-Readex ${theme ? "text-white" : "text-black"}`}
+                className={`font-Readex dark:text-white text-black`}
               >
                 v{isUpdateInfo?.version}
               </p>
               <p
                 data-tauri-drag-region
-                className={`font-Readex ${theme ? "text-white" : "text-black"}`}
+                className={`font-Readex dark:text-white text-black`}
               >
                 {isUpdateInfo?.releaseDate
                   ? String(
-                      moment(isUpdateInfo?.releaseDate).format("DD-MM-YYYY")
-                    )
+                    moment(isUpdateInfo?.releaseDate).format("DD-MM-YYYY")
+                  )
                   : "Unknown"}
               </p>
             </div>
@@ -158,9 +160,7 @@ function Update() {
             >
               <div
                 data-tauri-drag-region
-                className={`relative w-full rounded-[50px] h-[8px] ${
-                  theme ? "bg-gray-400" : "bg-gray-300"
-                }`}
+                className={`relative w-full rounded-[50px] h-[8px] dark:bg-gray-400 bg-gray-300`}
               >
                 <div
                   data-tauri-drag-region
@@ -180,20 +180,20 @@ function Update() {
             >
               <p
                 data-tauri-drag-region
-                className={`font-Readex ${theme ? "text-white" : "text-black"}`}
+                className={`font-Readex dark:text-white text-black`}
               >
                 v{isUpdateInfo?.version}
               </p>
               <p
                 data-tauri-drag-region
-                className={`font-Readex ${theme ? "text-white" : "text-black"}`}
+                className={`font-Readex dark:text-white text-black`}
               >
                 {isUpdateInfo?.releaseDate
                   ? String(
-                      moment(
-                        new Date(isUpdateInfo?.releaseDate).getTime()
-                      ).format("DD-MM-YYYY")
-                    )
+                    moment(
+                      new Date(isUpdateInfo?.releaseDate).getTime()
+                    ).format("DD-MM-YYYY")
+                  )
                   : "Unknown"}
               </p>
             </div>
@@ -202,7 +202,7 @@ function Update() {
               data-tauri-drag-region
               className="w-full items-center justify-center flex flex-row space-x-6"
             >
-              {/* <div className={`relative w-full rounded-[50px] h-[8px] ${theme ? "bg-gray-400" : "bg-gray-300"}`}>
+              {/* <div className={`relative w-full rounded-[50px] h-[8px] dark:bg-gray-400 bg-gray-300`}>
                                             <div
                                                 className="absolute rounded-[50px] w-0 h-[8px] bg-blue-600 duration-150"
                                                 style={{
@@ -212,9 +212,7 @@ function Update() {
                                         </div> */}
               <p
                 data-tauri-drag-region
-                className={`font-Readex font-bold ${
-                  theme ? "text-white" : "text-black"
-                }`}
+                className={`font-Readex font-bolddark:text-white text-black`}
               >
                 {t("downloading")}
               </p>
@@ -254,20 +252,20 @@ function Update() {
             >
               <p
                 data-tauri-drag-region
-                className={`font-Readex ${theme ? "text-white" : "text-black"}`}
+                className={`font-Readex dark:text-white text-black`}
               >
                 v{isUpdateInfo?.version}
               </p>
               <p
                 data-tauri-drag-region
-                className={`font-Readex ${theme ? "text-white" : "text-black"}`}
+                className={`font-Readex dark:text-white text-black`}
               >
                 {isUpdateInfo?.releaseDate
                   ? String(
-                      moment(
-                        new Date(isUpdateInfo?.releaseDate).getTime()
-                      ).format("DD-MM-YYYY")
-                    )
+                    moment(
+                      new Date(isUpdateInfo?.releaseDate).getTime()
+                    ).format("DD-MM-YYYY")
+                  )
                   : "Unknown"}
               </p>
             </div>
@@ -278,7 +276,7 @@ function Update() {
             >
               <p
                 data-tauri-drag-region
-                className={`font-Readex ${theme ? "text-white" : "text-black"}`}
+                className={`font-Readex dark:text-white text-black`}
               >
                 {t("finalizing")}
               </p>

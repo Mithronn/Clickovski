@@ -55,6 +55,7 @@ impl fmt::Display for ParseError {
 /// # Errors
 ///
 /// Will return [`ParseError`] if the input cannot be parsed
+#[allow(dead_code)]
 pub fn eval<K>(enigo: &mut K, input: &str) -> Result<(), ParseError>
 where
     K: KeyboardControllable,

@@ -1,83 +1,48 @@
 {
-  "$schema": "..\\node_modules/@tauri-apps/cli\\schema.json",
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Clickovski",
+  "version": "1.0.4",
+  "identifier": "com.mithronn.clickovski",
   "build": {
-    "beforeBuildCommand": "npm run build",
-    "beforeDevCommand": "npm run start",
-    "devPath": "http://localhost:3000",
-    "distDir": "../build",
-    "withGlobalTauri": false
+    "beforeDevCommand": "bun run dev",
+    "devUrl": "http://localhost:3000",
+    "beforeBuildCommand": "bun run build",
+    "frontendDist": "../out"
   },
-  "package": {
-    "productName": "Clickovski",
-    "version": "1.0.3"
+  "bundle": {
+    "active": true,
+    "category": "Business",
+    "copyright": "",
+    "externalBin": [],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "longDescription": "A small application to automate keyboard and mouse inputs",
+    "macOS": {
+      "entitlements": null,
+      "exceptionDomain": "",
+      "frameworks": [],
+      "providerShortName": null,
+      "signingIdentity": null
+    },
+    "resources": [],
+    "shortDescription": "",
+    "targets": "all",
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    }
   },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "notification": {
-        "all": true 
-      },
-      "globalShortcut": {
-        "all": true
-      },
-      "app": {
-        "all": true
-      },
-      "window": {
-        "all": true 
-      }
-    },
-    "systemTray": {
-      "iconPath": "icons/icon.png",
-      "iconAsTemplate": true
-    },
-    "bundle": {
-      "active": true,
-      "category": "Business",
-      "copyright": "",
-      "deb": {
-        "depends": []
-      },
-      "externalBin": [],
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
-      "identifier": "Clickovski",
-      "longDescription": "A small application to automate keyboard and mouse inputs",
-      "macOS": {
-        "entitlements": null,
-        "exceptionDomain": "",
-        "frameworks": [],
-        "providerShortName": null,
-        "signingIdentity": null
-      },
-      "resources": [],
-      "shortDescription": "",
-      "targets": "all",
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": ""
-      }
-    },
-    "security": {
-      "csp": null
-    },
-    "updater": {
-      "active": true,
-      "dialog": false,
-      "endpoints": [
-        "https://gist.githubusercontent.com/Mithronn/0622529ec8af6e4d137086e6134fb526/raw"
-      ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVFNUFBRjhCQUEwQTdBMDIKUldRQ2VncXFpNjlhN25rZjNkajAxMXgzRlJkNW9ndzAzM3k4OWxhWjlyUnZTbGlVYmhuWXA2dysK"
-    },
+  "app": {
     "windows": [
       {
         "fullscreen": false,
+        "maximizable": false,
         "resizable": false,
         "title": "Clickovski",
         "label": "main",
@@ -95,6 +60,7 @@
         "width": 350,
         "height": 400,
         "fullscreen": false,
+        "maximizable": false,
         "resizable": false,
         "title": "Clickovski Updater",
         "url": "update",
@@ -103,6 +69,19 @@
         "label": "updatescreen",
         "center": true
       }
-    ]
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "dialog": false,
+      "endpoints": [
+        "https://gist.githubusercontent.com/Mithronn/0622529ec8af6e4d137086e6134fb526/raw"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVFNUFBRjhCQUEwQTdBMDIKUldRQ2VncXFpNjlhN25rZjNkajAxMXgzRlJkNW9ndzAzM3k4OWxhWjlyUnZTbGlVYmhuWXA2dysK"
+    }
   }
 }

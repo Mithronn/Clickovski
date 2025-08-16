@@ -1,47 +1,47 @@
 /* eslint-disable @next/next/no-head-element */
-"use client";
 
 import "@/styles/globals.css";
 
 import React from "react";
-import Providers from "./Providers";
-import SafeHydrate from "./SafeHydrate";
-import { AnimatePresence, motion } from "framer-motion";
+import { Metadata } from "next";
 
 import Launcher from "@/components/Launcher";
-import { usePathname } from "next/navigation";
+import FramerAnimatePresence from "@/components/FramerAnimatePresence";
+import Providers from "../components/Providers";
+import SafeHydrate from "../components/SafeHydrate";
+import Script from "next/script";
+
+
+export const metadata: Metadata = {
+  title: `Clickovski`,
+  description: `Clickovski`,
+};
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-
-  const childrenWithProps = React.Children.map(children, child => {
-    // Checking isValidElement is the safe way and avoids a
-    // typescript error too.
-    if (React.isValidElement(child)) {
-      return React.cloneElement(child, { key: pathname });
-    }
-    return child;
-  });
   return (
-    <html>
-      <head></head>
+    <html suppressHydrationWarning>
+      <head>
+        <Script>
+          {`
+            if (localStorage.getItem("darkMode") === "true") {
+              document.documentElement.classList.add('dark');
+            } else {
+              document.documentElement.classList.remove('dark');
+            }
+          `}
+        </Script>
+      </head>
       <body>
         <SafeHydrate>
           <Providers>
             <div className="w-full min-h-screen overflow-hidden">
-              <AnimatePresence
-                mode="wait"
-                initial={false}
-                onExitComplete={() => window.scrollTo(0, 0)}
-              >
-                <motion.div key={pathname} className="overflow-hidden">
-                  {children}
-                </motion.div>
-              </AnimatePresence>
+              <FramerAnimatePresence>
+                {children}
+              </FramerAnimatePresence>
               <Launcher key="LAUNCHER" />
             </div>
           </Providers>

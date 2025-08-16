@@ -1,19 +1,14 @@
 "use client";
 
-import * as React from "react";
-import { Metadata } from "next";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { useDispatch, useSelector } from "react-redux";
-import { Tooltip, ClickAwayListener } from "@mui/material";
-import { tooltipClasses } from "@mui/material/Tooltip";
-import { styled } from "@mui/material/styles";
-import { useTranslation } from "react-i18next";
+import React, { useRef, useState, useEffect } from "react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
+import { motion } from "motion/react";
+import { useTranslation } from "react-i18next";
 
 import { emit, listen } from "@tauri-apps/api/event";
-import { invoke } from "@tauri-apps/api/tauri";
-import { appWindow } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import {
   DownloadIcon,
@@ -21,13 +16,18 @@ import {
   RecordIcon,
   WarningIcon,
 } from "@/components/icons";
-import CustomCheckbox from "@/components/Checkbox";
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   transition,
   convertKeyToReadableFromBackend,
-} from "@/lib/constants.js";
-import { setMode, setDelay, setKeyType, setKey } from "@/redux/actions";
-import useTheme from "@/components/useTheme";
+} from "@/lib/constants";
+import { useStateStore as useEngineStore } from "@/state/store";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { ClickAwayListener } from "@/components/ClickAwayListener";
 import styles from "@/styles/CSS.module.css";
 
 const DynamicImportedMouseSVG = dynamic(
@@ -35,34 +35,41 @@ const DynamicImportedMouseSVG = dynamic(
   { ssr: false }
 );
 
-export const metadata: Metadata = {
-  title: "Clickovski",
-};
+const appWindow = getCurrentWindow();
 
 const Home = () => {
   const { t } = useTranslation();
-  const router = useRouter();
 
-  const reduxState = useSelector((state: any) => state);
-  const theme = useTheme();
-  const dispatch = useDispatch();
-  const [isListeningKeyboard, setListeningKeyboard] = React.useState(false);
-  const [isListenedKeys, setListenedKeys] = React.useState(
-    reduxState.isKey ? String(reduxState.isKey).split("+") : []
+  const isKey = useEngineStore((state) => state.isKey);
+  const setKey = useEngineStore((state) => state.setKey);
+  const isKeyType = useEngineStore((state) => state.isKeyType);
+  const setKeyType = useEngineStore((state) => state.setKeyType);
+  const isStarting = useEngineStore((state) => state.isStarting);
+  const isStarted = useEngineStore((state) => state.isStarted);
+  const isGlobalShortcut = useEngineStore((state) => state.isGlobalShortcut);
+  const isMode = useEngineStore((state) => state.isMode);
+  const setMode = useEngineStore((state) => state.setMode);
+  const isDelay = useEngineStore((state) => state.isDelay);
+  const setDelay = useEngineStore((state) => state.setDelay);
+  const isDarkMode = useEngineStore((state) => state.isDarkMode);
+
+  const [isListeningKeyboard, setListeningKeyboard] = useState(false);
+  const [isListenedKeys, setListenedKeys] = useState(
+    isKey ? String(isKey).split("+") : []
   );
   const [timeoutListener, setTimeoutListener] =
-    React.useState<NodeJS.Timeout | null>(null);
+    useState<NodeJS.Timeout | null>(null);
 
-  const KeyboardEventListenerRef = React.useRef<HTMLButtonElement>();
+  const KeyboardEventListenerRef = useRef<HTMLButtonElement>(null);
 
-  const [isUpdateState, setUpdateState] = React.useState("Checking");
+  const [isUpdateState, setUpdateState] = useState("Checking");
 
-  React.useEffect(() => {
+  useEffect(() => {
     const updateState = (event: any) => {
       setUpdateState(event.payload);
     };
 
-    const updateDownloadedData = (event: any) => {
+    const updateDownloadedData = (_event: any) => {
       // setUpdateProgress((updateProgress) => {
       //   return { ...updateProgress, percent: 0 };
       // });
@@ -75,6 +82,7 @@ const Home = () => {
       updateDownloadedData
     );
 
+
     appWindow.setTitle("Clickovski");
     return () => {
       updateStateListen.then((f) => f());
@@ -82,41 +90,42 @@ const Home = () => {
     };
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     invoke("change_delay", {
-      invokeMessage: Number(reduxState.isDelay),
+      invokeMessage: Number(isDelay),
     });
-  }, [reduxState.isDelay]);
+  }, [isDelay]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     invoke("change_mode", {
-      invokeMessage: String(reduxState.isMode),
+      invokeMessage: String(isMode),
     });
-  }, [reduxState.isMode]);
+  }, [isMode]);
 
-  React.useEffect(() => {
-    if (reduxState.isKeyType === "Mouse") {
+  useEffect(() => {
+    if (isKeyType === "Mouse") {
       setListenedKeys(["Left"]);
-      dispatch(setKey("Left"));
+      setKey("Left");
     }
 
-    if (reduxState.isKeyType === "Keyboard") {
+    if (isKeyType === "Keyboard") {
       setListenedKeys(["C"]);
-      dispatch(setKey("C"));
+      setKey("C");
     }
+    console.log("KeyType changed to: ", isKeyType);
     invoke("change_key_type", {
-      invokeMessage: String(reduxState.isKeyType),
+      invokeMessage: String(isKeyType),
     });
-  }, [reduxState.isKeyType]);
+  }, [isKeyType]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     invoke("change_key", {
-      invokeMessage: convertKeyToReadableFromBackend(reduxState.isKey),
+      invokeMessage: convertKeyToReadableFromBackend(isKey),
     });
-    console.log(convertKeyToReadableFromBackend(reduxState.isKey));
-  }, [reduxState.isKey]);
+    console.log(convertKeyToReadableFromBackend(isKey));
+  }, [isKey]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (KeyboardEventListenerRef && KeyboardEventListenerRef.current) {
       if (isListeningKeyboard) {
         if (timeoutListener) {
@@ -146,7 +155,7 @@ const Home = () => {
 
         if (isListenedKeys.length === 0) {
           setListenedKeys(
-            reduxState.isKey ? String(reduxState.isKey).split("+") : []
+            isKey ? String(isKey).split("+") : []
           );
         }
 
@@ -154,14 +163,14 @@ const Home = () => {
           let SetRemovedKeys = new Set(removedKeys);
           removedKeys = Array.from(SetRemovedKeys);
           setListenedKeys(removedKeys);
-          dispatch(setKey(removedKeys.join("+").trim()));
+          setKey(removedKeys.join("+").trim());
         }
         KeyboardEventListenerRef.current.onkeydown = null;
       }
     }
   }, [isListeningKeyboard]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (timeoutListener) {
       clearTimeout(timeoutListener);
     }
@@ -172,14 +181,14 @@ const Home = () => {
         setListeningKeyboard(false);
         if (isListenedKeys.length === 0) {
           setListenedKeys(
-            reduxState.isKey ? String(reduxState.isKey).split("+") : []
+            isKey ? String(isKey).split("+") : []
           );
         }
       }, 2000)
     );
   }, [isListenedKeys]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isListenedKeys.length >= 3) {
       setListeningKeyboard(false);
 
@@ -219,51 +228,61 @@ const Home = () => {
 
   return (
     <div
-      className={`max-h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] flex flex-col p-6 pb-6 ${
-        theme ? "bg-darkgray" : "bg-white"
-      } duration-150 overflow-x-hidden overflow-y-auto ${
-        !theme
+      className={`max-h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] flex flex-col p-6 pb-6 
+        dark:bg-darkgray bg-white duration-150 overflow-x-hidden overflow-y-auto
+        ${!isDarkMode
           ? `${styles.styledScrollbar} ${styles.backgroundImage}`
           : `${styles.styledScrollbar2} ${styles.backgroundImage2}`
-      }`}
+        }`}
     >
       <div className="w-full relative">
         {isUpdateState === "Downloaded" ? (
-          <CustomToolTip
-            title={t("update_available")}
-            disableInteractive
-            placement="bottom"
+          <motion.div
+            className="outline-none focus:outline-none absolute top-0 right-16 opacity-0 p-2"
+            exit={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={transition}
           >
-            <motion.button
-              className="outline-none focus:outline-none absolute top-0 right-16 opacity-0 p-2"
-              exit={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={transition}
-              onClick={RestartAndUpdate}
-            >
-              <DownloadIcon className="text-green-700" width="18" height="18" />
-            </motion.button>
-          </CustomToolTip>
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <button onClick={RestartAndUpdate}>
+                  <DownloadIcon className="text-green-700" width="18" height="18" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="bottom"
+                className="bg-darkgray dark:bg-[#e5e5e5] dark:text-black text-white p-2 font-Readex shadow text-xs"
+              >
+                <p>{t("update_available")}</p>
+              </TooltipContent>
+            </Tooltip>
+          </motion.div>
         ) : null}
 
-        <CustomToolTip
-          title={t("settings")}
-          disableInteractive
-          placement="bottom"
+        <motion.div
+          animate={{ right: 0, rotate: 360 }}
+          className="group p-2 outline-none focus:outline-none absolute top-0 right-0"
+          transition={transition}
+          layoutId="settings-button"
         >
-          <motion.button
-            animate={{ right: 0 }}
-            className="group p-2 outline-none focus:outline-none absolute top-0 right-0"
-            transition={transition}
-            onClick={() => router.push("/settings")}
-          >
-            <SettingsIcon
-              className={`${theme ? "text-white" : "text-black"} duration-150`}
-              width="18"
-              height="18"
-            />
-          </motion.button>
-        </CustomToolTip>
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Link href={"/settings"}>
+                <SettingsIcon
+                  className={`dark:text-white text-black duration-150`}
+                  width="18"
+                  height="18"
+                />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent
+              side="bottom"
+              className="bg-darkgray dark:bg-[#e5e5e5] dark:text-black text-white p-2 font-Readex shadow text-xs"
+            >
+              <p>{t("settings")}</p>
+            </TooltipContent>
+          </Tooltip>
+        </motion.div>
       </div>
 
       <div className="h-full w-full flex flex-col space-y-8">
@@ -276,21 +295,19 @@ const Home = () => {
           {/* Mouse */}
           <div className={`flex flex-col space-y-3 duration-150 w-1/2`}>
             <label
-              className={`flex flex-row space-x-2 items-center ${
-                reduxState.isStarted ? "cursor-not-allowed" : "cursor-pointer"
-              }`}
+              className={`flex flex-row space-x-2 items-center ${isStarted ? "cursor-not-allowed" : "cursor-pointer"
+                }`}
             >
-              <CustomCheckbox
-                onChange={() => dispatch(setKeyType("Mouse"))}
-                checked={reduxState.isKeyType === "Mouse"}
-                disabled={reduxState.isStarted}
+              <Checkbox
+                onCheckedChange={() => setKeyType("Mouse")}
+                checked={isKeyType === "Mouse"}
+                disabled={isStarted}
               />
               <p
-                className={`font-Readex font-bold text-base select-none ${
-                  reduxState.isKeyType === "Mouse"
-                    ? "opacity-100"
-                    : "opacity-50"
-                } ${theme ? "text-white" : "text-black"} duration-150`}
+                className={`font-Readex font-bold text-base select-none ${isKeyType === "Mouse"
+                  ? "opacity-100"
+                  : "opacity-50"
+                  } dark:text-white text-black duration-150`}
               >
                 {t("mouse")}
               </p>
@@ -299,17 +316,17 @@ const Home = () => {
             <div className="pl-[calc(50%-72px)]">
               {/* <MouseSVG */}
               <DynamicImportedMouseSVG
-                theme={theme}
-                activeKey={reduxState.isKey}
-                isDisabled={reduxState.isKeyType !== "Mouse"}
-                isRunning={reduxState.isStarted}
+                theme={isDarkMode ?? false}
+                activeKey={isKey}
+                isDisabled={isKeyType !== "Mouse"}
+                isRunning={isStarted}
                 onPathClick={(key) => {
                   if (
-                    reduxState.isKeyType === "Mouse" &&
-                    !reduxState.isStarted
+                    isKeyType === "Mouse" &&
+                    !isStarted
                   ) {
                     setListenedKeys([key]);
-                    dispatch(setKey(String(key)));
+                    setKey(String(key));
                   }
                 }}
               />
@@ -319,23 +336,21 @@ const Home = () => {
           {/* Keyboard */}
           <div className={`flex flex-col space-y-3 duration-150 w-1/2`}>
             <label
-              className={`flex flex-row space-x-2 items-center ${
-                reduxState.isStarted /*true */
-                  ? "cursor-not-allowed"
-                  : "cursor-pointer"
-              }`}
+              className={`flex flex-row space-x-2 items-center ${isStarted /*true */
+                ? "cursor-not-allowed"
+                : "cursor-pointer"
+                }`}
             >
-              <CustomCheckbox
-                disabled={/*true */ reduxState.isStarted}
-                onChange={() => dispatch(setKeyType("Keyboard"))}
-                checked={reduxState.isKeyType === "Keyboard"}
+              <Checkbox
+                disabled={/*true */ isStarted}
+                onCheckedChange={() => setKeyType("Keyboard")}
+                checked={isKeyType === "Keyboard"}
               />
               <p
-                className={`font-Readex font-bold text-base select-none ${
-                  reduxState.isKeyType === "Keyboard"
-                    ? "opacity-100"
-                    : "opacity-50"
-                } ${theme ? "text-white" : "text-black"} duration-150`}
+                className={`font-Readex font-bold text-base select-none ${isKeyType === "Keyboard"
+                  ? "opacity-100"
+                  : "opacity-50"
+                  } dark:text-white text-black duration-150`}
               >
                 {t("keyboard")}
               </p>
@@ -347,36 +362,29 @@ const Home = () => {
               >
                 <button
                   ref={KeyboardEventListenerRef}
-                  disabled={reduxState.isKeyType !== "Keyboard"}
+                  disabled={isKeyType !== "Keyboard"}
                   onClick={() => setListeningKeyboard((state) => !state)}
-                  className={`outline-none flex flex-row justify-between items-center focus:outline-none rounded-md pr-4 pt-1 pb-1 font-Readex ${
-                    isListeningKeyboard
-                      ? "shadow-[#ff7070]"
-                      : "shadow-[#ff707000]"
-                  } shadow-[0px_0px_30px_0px] ${
-                    reduxState.isKeyType === "Keyboard"
+                  className={`outline-none flex flex-row justify-between items-center focus:outline-none rounded-md pr-4 pt-1 pb-1 font-Readex ${isListeningKeyboard
+                    ? "shadow-[#ff7070]"
+                    : "shadow-[#ff707000]"
+                    } shadow-[0px_0px_30px_0px] ${isKeyType === "Keyboard"
                       ? "opacity-100"
                       : "opacity-50"
-                  } ${
-                    theme
-                      ? "text-white bg-darkestgray"
-                      : "text-black bg-gray-200"
-                  } duration-150`}
+                    } 
+                    dark:text-white dark:bg-darkestgray
+                    text-black bg-gray-200
+                    duration-150`}
                 >
                   <div className="flex flex-row space-x-1 items-center">
                     <p
-                      className={`font-Readex font-bold text-base select-none text-opacity-0  ${
-                        theme ? "text-white" : "text-black"
-                      } duration-150`}
+                      className={`font-Readex font-bold text-base select-none opacity-0  dark:text-white text-black duration-150`}
                     >
                       #
                     </p>
                     {isListenedKeys.map((key, i) => (
                       <p
                         key={`keyboard_key_sequence_letter_${i}`}
-                        className={`font-Readex font-bold text-sm select-none  ${
-                          theme ? "text-white" : "text-black"
-                        } duration-150`}
+                        className={`font-Readex font-bold text-sm select-none  dark:text-white text-black duration-150`}
                       >
                         {key} {i !== isListenedKeys.length - 1 && " +"}
                       </p>
@@ -386,21 +394,19 @@ const Home = () => {
                   <span className="relative -top-[calc(50%-4px)] -left-2">
                     {isListeningKeyboard && (
                       <span
-                        className={`animate-ping absolute inline-flex h-4 w-4 rounded-full bg-red-500 ${
-                          isListeningKeyboard ? "opacity-75" : "opacity-0"
-                        } duration-150`}
+                        className={`animate-ping absolute inline-flex h-4 w-4 rounded-full bg-red-500 ${isListeningKeyboard ? "opacity-75" : "opacity-0"
+                          } duration-150`}
                       ></span>
                     )}
                     <RecordIcon
-                      className={`absolute inline-flex ${
-                        theme
-                          ? isListeningKeyboard
-                            ? "text-red-500"
-                            : "text-gray-500"
-                          : isListeningKeyboard
+                      className={`absolute inline-flex ${isDarkMode
+                        ? isListeningKeyboard
+                          ? "dark:text-red-500"
+                          : "dark:text-gray-500"
+                        : isListeningKeyboard
                           ? "text-red-500"
                           : "text-gray-400"
-                      } duration-150`}
+                        } duration-150`}
                       width="16"
                       height="16"
                     />
@@ -408,24 +414,19 @@ const Home = () => {
                 </button>
               </ClickAwayListener>
               <label className="flex flex-row space-x-2 items-center">
-                {reduxState.isGlobalShortcut ===
+                {isGlobalShortcut ===
                   isListenedKeys.join("+").trim() && !isListeningKeyboard ? (
                   <>
                     <WarningIcon
-                      className={`${
-                        theme ? "text-yellow-500" : "text-yellow-600"
-                      } select-none`}
+                      className={`dark:text-yellow-500 text-yellow-600 select-none`}
                       width={32}
                       height={32}
                     />
                     <p
-                      className={`font-Readex font-bold text-xs select-none ${
-                        reduxState.isKeyType === "Keyboard"
-                          ? "opacity-100"
-                          : "opacity-50"
-                      } ${
-                        theme ? "text-yellow-500" : "text-yellow-600"
-                      } duration-150`}
+                      className={`font-Readex font-bold text-xs select-none ${isKeyType === "Keyboard"
+                        ? "opacity-100"
+                        : "opacity-50"
+                        } dark:text-yellow-500 text-yellow-600 duration-150`}
                     >
                       {t("keyboard_press_same_as_hotkey")}
                     </p>
@@ -436,19 +437,17 @@ const Home = () => {
                       #
                     </p>
                     <p
-                      className={`font-Readex font-bold text-xs select-none ${
-                        reduxState.isKeyType === "Keyboard"
-                          ? "opacity-100"
-                          : "opacity-50"
-                      } ${
-                        theme
+                      className={`font-Readex font-bold text-xs select-none ${isKeyType === "Keyboard"
+                        ? "opacity-100"
+                        : "opacity-50"
+                        } ${isDarkMode
                           ? isListeningKeyboard
                             ? "text-blue-500"
                             : "text-gray-400"
                           : isListeningKeyboard
-                          ? "text-blue-500"
-                          : "text-gray-400"
-                      } duration-150`}
+                            ? "text-blue-500"
+                            : "text-gray-400"
+                        } duration-150`}
                     >
                       {isListeningKeyboard
                         ? `${t("buttons")} ${t("recording")}`
@@ -465,9 +464,7 @@ const Home = () => {
           exit={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={transition}
-          className={`opacity-0 w-full h-[2px] mt-8 ${
-            theme ? "bg-[rgba(255,255,255,0.05)]" : "bg-[rgba(0,0,0,0.05)]"
-          } rounded-[50px]`}
+          className={`opacity-0 w-full h-[2px] mt-8 dark:bg-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.05)] rounded-[50px]`}
         ></motion.div>
 
         <motion.div
@@ -478,65 +475,55 @@ const Home = () => {
         >
           <div className={`flex flex-col space-y-3 duration-150`}>
             <label
-              className={`flex flex-row space-x-2 items-center ${
-                reduxState.isStarted ? "cursor-not-allowed" : "cursor-pointer"
-              }`}
+              className={`flex flex-row space-x-2 items-center ${isStarted ? "cursor-not-allowed" : "cursor-pointer"
+                }`}
             >
-              <CustomCheckbox
-                onChange={() => dispatch(setMode("withTimer"))}
-                checked={reduxState.isMode === "withTimer"}
-                disabled={reduxState.isStarted}
+              <Checkbox
+                onCheckedChange={() => setMode("withTimer")}
+                checked={isMode === "withTimer"}
+                disabled={isStarted}
               />
               <p
-                className={`font-Readex font-bold text-base select-none ${
-                  reduxState.isMode === "withTimer"
-                    ? "opacity-100"
-                    : "opacity-50"
-                } ${theme ? "text-white" : "text-black"} duration-150`}
+                className={`font-Readex font-bold text-base select-none ${isMode === "withTimer"
+                  ? "opacity-100"
+                  : "opacity-50"
+                  } dark:text-white text-black duration-150`}
               >
                 {t("click_with_timer")}
               </p>
             </label>
 
             <div
-              className={`flex flex-col space-y-3 items-center ${
-                reduxState.isMode === "withTimer" ? "opacity-100" : "opacity-50"
-              } duration-150`}
+              className={`flex flex-col space-y-3 items-center ${isMode === "withTimer" ? "opacity-100" : "opacity-50"
+                } duration-150`}
             >
               <div className="flex flex-row space-x-3 items-center">
                 <input
                   type="number"
                   name="withTimerDelay"
                   min={1}
-                  value={reduxState.isDelay}
-                  disabled={reduxState.isStarted || reduxState.isStarting}
+                  value={isDelay}
+                  disabled={isStarted || isStarting}
                   onChange={(e) => {
                     if (Number(e.target.value) <= 0) {
-                      dispatch(setDelay(1));
+                      setDelay(1);
                     } else {
-                      dispatch(setDelay(Number(e.target.value)));
+                      setDelay(Number(e.target.value));
                     }
                   }}
-                  className={`${
-                    reduxState.isStarted ? "cursor-not-allowed" : "cursor-text"
-                  } ${
-                    styles.number_input
-                  } appearance-none outline-none focus:outline-none rounded-md pl-2 pt-1 pb-1 font-Readex ${
-                    theme
-                      ? "text-white bg-darkestgray shadow-xl"
-                      : "text-black bg-gray-200 shadow"
-                  } duration-150`}
+                  className={`${isStarted ? "cursor-not-allowed" : "cursor-text"
+                    } ${styles.number_input
+                    } appearance-none outline-none focus:outline-none rounded-md pl-2 pt-1 pb-1 font-Readex 
+                    dark:text-white dark:bg-darkestgray dark:shadow-xl
+                    text-black bg-gray-200 shadow duration-150
+                    `}
                 />
                 <p
-                  className={`font-Readex text-sm select-none ${
-                    theme ? "text-white" : "text-black"
-                  } duration-150`}
+                  className={`font-Readex text-sm select-none dark:text-white text-black duration-150`}
                 >
                   {t("millis")}{" "}
                   <a
-                    className={`${
-                      theme ? "text-gray-400" : "text-gray-900"
-                    } duration-150`}
+                    className={`dark:text-gray-400 text-gray-900 duration-150`}
                   >
                     (1 {t("second").toLowerCase()} = 1000 ms)
                   </a>
@@ -544,9 +531,7 @@ const Home = () => {
               </div>
 
               <p
-                className={`font-Readex text-sm select-none ${
-                  theme ? "text-white" : "text-black"
-                } duration-150`}
+                className={`font-Readex text-sm select-none dark:text-white text-black duration-150`}
               >
                 {t("click_key_expl_text")}
               </p>
@@ -562,38 +547,33 @@ const Home = () => {
         >
           <div className={`flex flex-col space-y-3 duration-150`}>
             <label
-              className={`flex flex-row space-x-2 items-center ${
-                reduxState.isStarted ? "cursor-not-allowed" : "cursor-pointer"
-              }`}
+              className={`flex flex-row space-x-2 items-center ${isStarted ? "cursor-not-allowed" : "cursor-pointer"
+                }`}
             >
-              <CustomCheckbox
-                onChange={() => dispatch(setMode("withToggle"))}
-                checked={reduxState.isMode === "withToggle"}
-                disabled={reduxState.isStarted}
+              <Checkbox
+                onCheckedChange={() => setMode("withToggle")}
+                checked={isMode === "withToggle"}
+                disabled={isStarted}
               />
               <p
-                className={`font-Readex font-bold text-base select-none ${
-                  reduxState.isMode === "withToggle"
-                    ? "opacity-100"
-                    : "opacity-50"
-                } ${theme ? "text-white" : "text-black"} duration-150`}
+                className={`font-Readex font-bold text-base select-none ${isMode === "withToggle"
+                  ? "opacity-100"
+                  : "opacity-50"
+                  } dark:text-white text-black duration-150`}
               >
                 {t("hold_key")}
               </p>
             </label>
 
             <div
-              className={`flex flex-row items-center ${
-                reduxState.isMode === "withToggle"
-                  ? "opacity-100"
-                  : "opacity-50"
-              } duration-150`}
+              className={`flex flex-row items-center ${isMode === "withToggle"
+                ? "opacity-100"
+                : "opacity-50"
+                } duration-150`}
             >
               <div className="flex flex-row items-center">
                 <p
-                  className={`font-Readex text-sm select-none ${
-                    theme ? "text-white" : "text-black"
-                  } duration-150`}
+                  className={`font-Readex text-sm select-none dark:text-white text-black duration-150`}
                 >
                   {t("hold_key_expl_text")}
                 </p>
@@ -605,23 +585,5 @@ const Home = () => {
     </div>
   );
 };
-
-const CustomToolTip = styled(({ className, ...props }: TooltipProps) => (
-  <Tooltip {...props} arrow classes={{ popper: className }} />
-))(({ theme }) => ({
-  [`& .${tooltipClasses.arrow}`]: {
-    color: "rgb(16,14,14)",
-  },
-  [`& .${tooltipClasses.tooltip}`]: {
-    backgroundColor: "rgb(16,14,14)",
-    padding: 8,
-    color: "rgb(229,231,235)",
-    fontSize: 12,
-    fontWeight: "normal",
-    fontFamily: "Readex Pro, sans-serif",
-    boxShadow:
-      "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
-  },
-}));
 
 export default Home;
