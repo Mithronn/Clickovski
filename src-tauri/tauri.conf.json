@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Clickovski",
-  "version": "1.0.4",
+  "version": "1.0.3",
   "identifier": "com.mithronn.clickovski",
   "build": {
     "beforeDevCommand": "bun run dev",
@@ -10,6 +10,7 @@
     "frontendDist": "../out"
   },
   "bundle": {
+    "createUpdaterArtifacts": true,
     "active": true,
     "category": "Business",
     "copyright": "",
@@ -81,7 +82,7 @@
       "endpoints": [
         "https://gist.githubusercontent.com/Mithronn/0622529ec8af6e4d137086e6134fb526/raw"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVFNUFBRjhCQUEwQTdBMDIKUldRQ2VncXFpNjlhN25rZjNkajAxMXgzRlJkNW9ndzAzM3k4OWxhWjlyUnZTbGlVYmhuWXA2dysK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQzQkU3M0I2MjUxQTkyQTAKUldTZ2tob2x0bk8rUTNmL3hmWGo2SDBDZkNkYmt4NkdiWXVmSG9zZzYxTmh3TXNJWStaakF5eUoK"
     }
   }
 }
