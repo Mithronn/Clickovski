@@ -80,7 +80,7 @@
       "active": true,
       "dialog": false,
       "endpoints": [
-        "https://gist.githubusercontent.com/Mithronn/0622529ec8af6e4d137086e6134fb526/raw"
+        "https://github.com/Mithronn/Clickovski/releases/latest/download/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQzQkU3M0I2MjUxQTkyQTAKUldTZ2tob2x0bk8rUTNmL3hmWGo2SDBDZkNkYmt4NkdiWXVmSG9zZzYxTmh3TXNJWStaakF5eUoK"
     }
