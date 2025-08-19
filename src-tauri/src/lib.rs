@@ -10,6 +10,7 @@ use tauri_plugin_notification::{NotificationExt, PermissionState};
 mod dsl;
 mod script_core;
 mod utils;
+#[cfg(target_os = "windows")]
 mod windows;
 
 use script_core::{MacroMode, StateCore};
