@@ -4,19 +4,31 @@ import { initReactI18next } from 'react-i18next'
 import languageEN from '../localization/en.json'
 import languageTR from '../localization/tr.json'
 
+function convertLocales<T extends Record<string, any>>(locale: T, excludeKeys: string[] = ["_version"]): { translation: T } {
+    const filtered = Object.fromEntries(
+        Object.entries(locale).filter(([key]) => !excludeKeys.includes(key))
+    )
+
+    return {
+        translation: filtered as T
+    }
+}
+
 i18n
     .use(initReactI18next)
     .init({
         resources: {
-            English: languageEN,
-            "Türkçe": languageTR
+            English: convertLocales(languageEN),
+            "Türkçe": convertLocales(languageTR)
         },
         supportedLngs: ['English', 'Türkçe'],
         fallbackLng: 'English',
         debug: process.env.NODE_ENV === 'development',
         keySeparator: '.',
         interpolation: {
-            formatSeparator: ','
+            formatSeparator: ',',
+            prefix: "%{",
+            suffix: "}"
         },
         react: {
             bindI18n: 'languageChanged loaded',

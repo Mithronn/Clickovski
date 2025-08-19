@@ -1,12 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Clickovski",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "identifier": "com.mithronn.clickovski",
   "build": {
     "beforeDevCommand": "bun run dev",
-    "devUrl": "http://localhost:3000",
     "beforeBuildCommand": "bun run build",
+    "devUrl": "http://localhost:3000",
     "frontendDist": "../out"
   },
   "bundle": {

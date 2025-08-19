@@ -3,20 +3,18 @@
 import { ReactNode, useEffect, useLayoutEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
-import { I18nextProvider, getI18n, useTranslation } from "react-i18next";
+import { I18nextProvider, getI18n } from "react-i18next";
 
 import {
   isPermissionGranted,
   requestPermission,
 } from "@tauri-apps/plugin-notification";
 import { listen } from "@tauri-apps/api/event";
-import { invoke } from "@tauri-apps/api/core";
 
 import i18n from "@/components/i18n";
 import { useStateStore as useEngineStore } from "@/state/store";
 
 export default function Providers({ children }: { children: ReactNode }) {
-  const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -48,12 +46,6 @@ export default function Providers({ children }: { children: ReactNode }) {
   }, [isDarkMode, isLanguage, setGlobalShortcutActive]);
 
   useEffect(() => {
-    const routeSettings = (event: any) => {
-      if (Boolean(event.payload)) {
-        router.push("/settings");
-      }
-    };
-
     // Notification permission request
     if (pathname !== "/update") {
       isPermissionGranted().then((res) => {
@@ -62,19 +54,14 @@ export default function Providers({ children }: { children: ReactNode }) {
         }
       });
     }
+  }, []);
 
-    if (pathname !== "/update") {
-      isPermissionGranted().then((res) => {
-        if (!res) return;
-
-        invoke("administation_notification", {
-          invokeMessage: JSON.stringify({
-            title: t("attention"),
-            body: t("not_admin_text"),
-          }),
-        });
-      });
-    }
+  useEffect(() => {
+    const routeSettings = (event: any) => {
+      if (Boolean(event.payload)) {
+        router.push("/settings");
+      }
+    };
 
     const routeSettingsListen = listen("routeSettings", routeSettings);
 
