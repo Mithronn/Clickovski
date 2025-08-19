@@ -19,6 +19,7 @@
     "autostart:allow-enable",
     "autostart:allow-disable",
     "autostart:allow-is-enabled",
-    "zustand:default"
+    "zustand:default",
+    "process:default"
   ]
 }

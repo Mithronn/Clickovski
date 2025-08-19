@@ -34,6 +34,6 @@
     "downloading": "Downloading",
     "finalizing": "Finalizing",
     "checking_for_updates": "Checking for updates",
-    "updates_downloading": "Updates downloading",
-    "updates_downloaded": "Updates downloaded"
+    "updates_downloading": "Downloading update",
+    "updates_downloaded": "Update downloaded"
 }
