@@ -19,37 +19,37 @@ use utils::is_app_elevated_for_current_os;
 i18n!("../src/localization", fallback = "en");
 
 #[tauri::command]
-fn start_launcher(state_core: State<'_, StateCore>) -> bool {
-    state_core.start_launcher();
+fn start_launcher(state_core: State<'_, StateCore>) -> Result<(), String> {
+    state_core.start_launcher().map_err(|x| x.to_string())?;
 
-    return true;
+    Ok(())
 }
 
 #[tauri::command]
-fn stop_launcher(state_core: State<'_, StateCore>) -> bool {
-    state_core.stop_launcher();
+fn stop_launcher(state_core: State<'_, StateCore>) -> Result<(), String> {
+    state_core.stop_launcher().map_err(|x| x.to_string())?;
 
-    return true;
+    Ok(())
 }
 
 #[tauri::command]
 fn change_delay(state_core: State<'_, StateCore>, invoke_message: i64) {
-    state_core.set_delay(&invoke_message);
+    let _ = state_core.set_delay(&invoke_message);
 }
 
 #[tauri::command]
 fn change_mode(state_core: State<'_, StateCore>, invoke_message: String) {
-    state_core.set_mode(&invoke_message);
+    let _ = state_core.set_mode(&invoke_message);
 }
 
 #[tauri::command]
 fn change_key(state_core: State<'_, StateCore>, invoke_message: String) {
-    state_core.set_key(&invoke_message);
+    let _ = state_core.set_key(&invoke_message);
 }
 
 #[tauri::command]
 fn change_key_type(state_core: State<StateCore>, invoke_message: String) {
-    state_core.set_key_type(&invoke_message);
+    let _ = state_core.set_key_type(&invoke_message);
 }
 
 #[tauri::command]
@@ -334,20 +334,26 @@ pub fn run() {
                     String::from("English"),
                 );
 
+                let is_notification_enabled =
+                    app.zustand()
+                        .try_get_or("launcher-storage", "isNotifications", true);
+
                 let locale = match locale.as_str() {
                     "Türkçe" => "tr",
                     _ => "en",
                 };
 
-                if let Ok(permission) = app.notification().permission_state() {
-                    if permission == PermissionState::Granted {
-                        if !is_app_elevated_for_current_os() {
-                            app.notification()
-                                .builder()
-                                .title(t!("attention", locale = locale))
-                                .body(t!("not_admin_text", locale = locale))
-                                .show()
-                                .unwrap();
+                if is_notification_enabled {
+                    if let Ok(permission) = app.notification().permission_state() {
+                        if permission == PermissionState::Granted {
+                            if !is_app_elevated_for_current_os() {
+                                app.notification()
+                                    .builder()
+                                    .title(t!("attention", locale = locale))
+                                    .body(t!("not_admin_text", locale = locale))
+                                    .show()
+                                    .unwrap();
+                            }
                         }
                     }
                 }

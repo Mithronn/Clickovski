@@ -1,4 +1,4 @@
-use enigo::{Key, KeyboardControllable};
+use enigo::{Direction, InputError, Key, Keyboard};
 use std::error::Error;
 use std::fmt;
 
@@ -33,19 +33,24 @@ pub enum ParseError {
     /// When {UNICODE} is encountered without an action
     /// Use {+UNICODE} or {-UNICODE} to enable / disable unicode
     MissingUnicodeAction,
+
+    EnigoEngineError(InputError),
+    OtherError(String),
 }
 
 impl Error for ParseError {}
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let text = match *self {
+        let text = match self {
             Self::UnknownTag(_) => "Unknown tag",
             Self::UnexpectedOpen => "Unescaped open bracket ({) found inside tag name",
             Self::UnmatchedOpen => "Unmatched open bracket ({). No matching close (})",
             Self::UnmatchedClose => "Unmatched close bracket (}). No previous open ({)",
             Self::EmptyTag => "Empty tag",
             Self::MissingUnicodeAction => "Missing unicode action. {+UNICODE} or {-UNICODE}",
+            Self::EnigoEngineError(err) => &err.to_string(),
+            Self::OtherError(err) => err,
         };
         f.write_str(text)
     }
@@ -58,18 +63,26 @@ impl fmt::Display for ParseError {
 #[allow(dead_code)]
 pub fn eval<K>(enigo: &mut K, input: &str) -> Result<(), ParseError>
 where
-    K: KeyboardControllable,
+    K: Keyboard,
 {
     for token in tokenize(input)? {
         match token {
             Token::Sequence(buffer) => {
                 for key in buffer.chars() {
-                    enigo.key_click(Key::Layout(key));
+                    enigo
+                        .key(Key::Unicode(key), Direction::Click)
+                        .map_err(|x| ParseError::EnigoEngineError(x))?;
                 }
             }
-            Token::Unicode(buffer) => enigo.key_sequence(&buffer),
-            Token::KeyUp(key) => enigo.key_up(key),
-            Token::KeyDown(key) => enigo.key_down(key),
+            Token::Unicode(buffer) => enigo
+                .text(&buffer)
+                .map_err(|x| ParseError::EnigoEngineError(x))?,
+            Token::KeyUp(key) => enigo
+                .key(key, Direction::Release)
+                .map_err(|x| ParseError::EnigoEngineError(x))?,
+            Token::KeyDown(key) => enigo
+                .key(key, Direction::Press)
+                .map_err(|x| ParseError::EnigoEngineError(x))?,
         }
     }
     Ok(())

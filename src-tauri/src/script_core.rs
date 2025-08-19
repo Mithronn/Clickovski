@@ -1,5 +1,5 @@
 use std::{
-    cell::RefCell,
+    cell::{BorrowMutError, RefCell},
     sync::{
         mpsc::{channel, Receiver, Sender, TryRecvError},
         Arc, Mutex, MutexGuard,
@@ -11,7 +11,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::dsl::{tokenize, ParseError, Token};
-use enigo::*;
+use enigo::{Button, Direction, Enigo, Key, Keyboard, Mouse, Settings};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MacroMode {
@@ -57,12 +57,15 @@ impl StateCore {
             is_program_running: RefCell::new(false),
             channel_sender: RefCell::new(sender),
             channel_reciever: RefCell::new(Arc::new(Mutex::new(receiver))),
-            enigo_engine: RefCell::new(Arc::new(Mutex::new(Enigo::new()))),
+            enigo_engine: RefCell::new(Arc::new(Mutex::new(
+                Enigo::new(&Settings::default()).unwrap(),
+            ))),
         };
     }
 
-    pub fn start_launcher(&self) {
-        self.state_change(true);
+    pub fn start_launcher(&self) -> Result<(), ParseError> {
+        self.state_change(true)
+            .map_err(|x| ParseError::OtherError(x.to_string()))?;
 
         let mode_barrow = self.mode.borrow();
         let mode = mode_barrow.clone();
@@ -74,7 +77,7 @@ impl StateCore {
                 let delay = delay_borrow.parse::<u64>().unwrap_or(100);
                 drop(delay_borrow);
 
-                self.set_interval(delay);
+                self.set_interval(delay)?;
             }
             MacroMode::Toggle => {
                 let key_type_barrow = self.key_type.borrow();
@@ -89,21 +92,24 @@ impl StateCore {
                                 .clone()
                                 .lock()
                                 .unwrap()
-                                .mouse_down(MouseButton::Left);
+                                .button(Button::Left, Direction::Press)
+                                .map_err(|x| ParseError::EnigoEngineError(x))?;
                         } else if &*self.key.borrow().clone().lock().unwrap() == "right" {
                             self.enigo_engine
                                 .borrow()
                                 .clone()
                                 .lock()
                                 .unwrap()
-                                .mouse_down(MouseButton::Right);
+                                .button(Button::Right, Direction::Press)
+                                .map_err(|x| ParseError::EnigoEngineError(x))?;
                         } else if &*self.key.borrow().clone().lock().unwrap() == "middle" {
                             self.enigo_engine
                                 .borrow()
                                 .clone()
                                 .lock()
                                 .unwrap()
-                                .mouse_down(MouseButton::Middle);
+                                .button(Button::Middle, Direction::Press)
+                                .map_err(|x| ParseError::EnigoEngineError(x))?;
                         }
                     }
                     KeyType::Keyboard => {
@@ -111,16 +117,17 @@ impl StateCore {
                             &mut self.enigo_engine.borrow().clone().lock().unwrap(),
                             self.key.borrow().clone().lock().unwrap().as_str(),
                             &ToggleType::Down,
-                        )
-                        .unwrap();
+                        )?;
                     }
                 }
             }
         }
+        Ok(())
     }
 
-    pub fn stop_launcher(&self) {
-        self.state_change(false);
+    pub fn stop_launcher(&self) -> Result<(), ParseError> {
+        self.state_change(false)
+            .map_err(|x| ParseError::OtherError(x.to_string()))?;
 
         let mode_barrow = self.mode.borrow();
         let mode = mode_barrow.clone();
@@ -143,21 +150,24 @@ impl StateCore {
                                 .clone()
                                 .lock()
                                 .unwrap()
-                                .mouse_up(MouseButton::Left);
+                                .button(Button::Left, Direction::Release)
+                                .map_err(|x| ParseError::EnigoEngineError(x))?;
                         } else if &*self.key.borrow().clone().lock().unwrap() == "right" {
                             self.enigo_engine
                                 .borrow()
                                 .clone()
                                 .lock()
                                 .unwrap()
-                                .mouse_up(MouseButton::Right);
+                                .button(Button::Right, Direction::Release)
+                                .map_err(|x| ParseError::EnigoEngineError(x))?;
                         } else if &*self.key.borrow().clone().lock().unwrap() == "middle" {
                             self.enigo_engine
                                 .borrow()
                                 .clone()
                                 .lock()
                                 .unwrap()
-                                .mouse_up(MouseButton::Middle);
+                                .button(Button::Middle, Direction::Release)
+                                .map_err(|x| ParseError::EnigoEngineError(x))?;
                         }
                     }
                     KeyType::Keyboard => {
@@ -165,49 +175,47 @@ impl StateCore {
                             &mut self.enigo_engine.borrow().clone().lock().unwrap(),
                             self.key.borrow().clone().lock().unwrap().as_str(),
                             &ToggleType::Up,
-                        )
-                        .unwrap();
+                        )?;
                     }
                 }
             }
         }
+
+        Ok(())
     }
 
-    pub fn state_change(&self, state: bool) {
-        *self.is_program_running.borrow_mut() = state;
+    pub fn state_change(&self, state: bool) -> Result<(), BorrowMutError> {
+        *self.is_program_running.try_borrow_mut()? = state;
+        Ok(())
     }
 
-    pub fn set_delay(&self, delay: &i64) {
-        *self.delay_for_notifications.borrow_mut() = delay.to_string();
+    pub fn set_delay(&self, delay: &i64) -> Result<(), BorrowMutError> {
+        *self.delay_for_notifications.try_borrow_mut()? = delay.to_string();
+        Ok(())
     }
 
-    pub fn set_mode(&self, mode: &String) {
-        match mode.as_str() {
-            "withToggle" => {
-                *self.mode.borrow_mut() = MacroMode::Toggle;
-            }
-            _ /*| "withTimer" */ => {
-                *self.mode.borrow_mut() = MacroMode::Timer;
-            }
-        }
+    pub fn set_mode(&self, mode: &String) -> Result<(), BorrowMutError> {
+        *self.mode.try_borrow_mut()? = match mode.as_str() {
+            "withToggle" => MacroMode::Toggle,
+            _ /*| "withTimer" */ => MacroMode::Timer
+        };
+        Ok(())
     }
 
-    pub fn set_key(&self, key: &str) {
-        *self.key.borrow_mut() = Arc::new(Mutex::new(key.to_string()));
+    pub fn set_key(&self, key: &str) -> Result<(), BorrowMutError> {
+        *self.key.try_borrow_mut()? = Arc::new(Mutex::new(key.to_string()));
+        Ok(())
     }
 
-    pub fn set_key_type(&self, key_type: &String) {
-        match key_type.as_str() {
-            "Keyboard" => {
-                *self.key_type.borrow_mut() = Arc::new(Mutex::new(KeyType::Keyboard));
-            }
-            _ /*| "Mouse" */ => {
-                *self.key_type.borrow_mut() = Arc::new(Mutex::new(KeyType::Mouse));
-            }
-        }
+    pub fn set_key_type(&self, key_type: &String) -> Result<(), BorrowMutError> {
+        *self.key_type.try_borrow_mut()? = Arc::new(Mutex::new(match key_type.as_str() {
+            "Keyboard" => KeyType::Keyboard,
+            _ /*| "Mouse" */ => KeyType::Mouse
+        }));
+        Ok(())
     }
 
-    fn set_interval(&self, delay: u64) {
+    fn set_interval(&self, delay: u64) -> Result<(), ParseError> {
         let receiver = self.channel_reciever.borrow().clone();
         let enigo_engine = self.enigo_engine.borrow().clone();
         let wait_time = Duration::from_millis(delay);
@@ -234,11 +242,20 @@ impl StateCore {
             match key_type_state_copy {
                 KeyType::Mouse => {
                     if key_state_copy == "left" {
-                        engine_mutex_copy.mouse_click(MouseButton::Left);
+                        // engine_mutex_copy.mouse_click(MouseButton::Left);
+                        engine_mutex_copy
+                            .button(Button::Left, Direction::Click)
+                            .unwrap();
                     } else if key_state_copy == "right" {
-                        engine_mutex_copy.mouse_click(MouseButton::Right);
+                        // engine_mutex_copy.mouse_click(MouseButton::Right);
+                        engine_mutex_copy
+                            .button(Button::Right, Direction::Click)
+                            .unwrap();
                     } else if key_state_copy == "middle" {
-                        engine_mutex_copy.mouse_click(MouseButton::Middle);
+                        // engine_mutex_copy.mouse_click(MouseButton::Middle);
+                        engine_mutex_copy
+                            .button(Button::Middle, Direction::Click)
+                            .unwrap();
                     }
                 }
                 KeyType::Keyboard => {
@@ -251,6 +268,8 @@ impl StateCore {
                 thread::sleep(remaining);
             }
         });
+
+        Ok(())
     }
 }
 
@@ -259,12 +278,24 @@ fn eval(enigo_engine: &mut MutexGuard<'_, Enigo>, input: &str) -> Result<(), Par
         match token {
             Token::Sequence(buffer) => {
                 for key in buffer.chars() {
-                    enigo_engine.key_click(Key::Layout(key));
+                    // enigo_engine.key_click(Key::Layout(key));
+                    enigo_engine
+                        .key(Key::Unicode(key), Direction::Click)
+                        .map_err(|x| ParseError::EnigoEngineError(x))?;
                 }
             }
-            Token::Unicode(buffer) => enigo_engine.key_sequence(&buffer),
-            Token::KeyUp(key) => enigo_engine.key_up(key),
-            Token::KeyDown(key) => enigo_engine.key_down(key),
+            // Token::Unicode(buffer) => enigo_engine.key_sequence(&buffer),
+            Token::Unicode(buffer) => enigo_engine
+                .text(&buffer)
+                .map_err(|x| ParseError::EnigoEngineError(x))?,
+            // Token::KeyUp(key) => enigo_engine.key_up(key),
+            Token::KeyUp(key) => enigo_engine
+                .key(key, Direction::Release)
+                .map_err(|x| ParseError::EnigoEngineError(x))?,
+            // Token::KeyDown(key) => enigo_engine.key_down(key),
+            Token::KeyDown(key) => enigo_engine
+                .key(key, Direction::Press)
+                .map_err(|x| ParseError::EnigoEngineError(x))?,
         }
     }
     Ok(())
@@ -301,12 +332,24 @@ fn eval_toggle(
         match token {
             Token::Sequence(buffer) => {
                 for key in buffer.chars() {
-                    enigo_engine.key_click(Key::Layout(key));
+                    // enigo_engine.key_click(Key::Layout(key));
+                    enigo_engine
+                        .key(Key::Unicode(key), Direction::Click)
+                        .map_err(|x| ParseError::EnigoEngineError(x))?;
                 }
             }
-            Token::Unicode(buffer) => enigo_engine.key_sequence(&buffer),
-            Token::KeyUp(key) => enigo_engine.key_up(*key),
-            Token::KeyDown(key) => enigo_engine.key_down(*key),
+            // Token::Unicode(buffer) => enigo_engine.key_sequence(&buffer),
+            Token::Unicode(buffer) => enigo_engine
+                .text(&buffer)
+                .map_err(|x| ParseError::EnigoEngineError(x))?,
+            // Token::KeyUp(key) => enigo_engine.key_up(key),
+            Token::KeyUp(key) => enigo_engine
+                .key(*key, Direction::Release)
+                .map_err(|x| ParseError::EnigoEngineError(x))?,
+            // Token::KeyDown(key) => enigo_engine.key_down(key),
+            Token::KeyDown(key) => enigo_engine
+                .key(*key, Direction::Press)
+                .map_err(|x| ParseError::EnigoEngineError(x))?,
         }
     }
     Ok(())
