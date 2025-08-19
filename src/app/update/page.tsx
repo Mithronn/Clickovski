@@ -241,7 +241,7 @@ function Update() {
         ) : (
           <div
             data-tauri-drag-region
-            className="flex w-full flex-col space-y-3 items-center justify-center"
+            className="flex w-full flex-col space-y-6 items-center justify-center"
           >
             <div
               data-tauri-drag-region
@@ -249,13 +249,13 @@ function Update() {
             >
               <p
                 data-tauri-drag-region
-                className={`font-Readex dark:text-white text-black`}
+                className={`font-Readex dark:text-white/50 text-black select-none`}
               >
                 v{isUpdateInfo?.version}
               </p>
               <p
                 data-tauri-drag-region
-                className={`font-Readex dark:text-white text-black`}
+                className={`font-Readex dark:text-white/50 text-black select-none`}
               >
                 {isUpdateInfo?.releaseDate
                   ? String(
