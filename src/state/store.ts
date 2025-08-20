@@ -10,7 +10,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 type Mode = "withTimer" | "withToggle";
 type KeyType = "Mouse" | "Keyboard";
-type AvailableLanguages = "English" | "Türkçe";
+type AvailableLanguages = 'English' | 'Türkçe' | "Русский" | "Español" | "Português" | "Français" | "Deutsch" | "عربي";
 
 type StoreState = {
   isStarting: boolean,
@@ -163,5 +163,6 @@ export const tauriHandler = createTauriStore('launcher-storage', useStateStore, 
   saveOnChange: true,
   saveStrategy: 'debounce',
   saveInterval: 500, //ms
+  filterKeys: ["isGlobalShortcutActive", "isErrorMessage", "isStarted", "isStarting"]
 });
 

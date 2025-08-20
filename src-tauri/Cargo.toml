@@ -48,5 +48,5 @@ winapi = { version = "0.3.9", features = [
 ] }
 
 [package.metadata.i18n]
-available-locales = ["en", "tr"]
+available-locales = ["en", "tr", "ru", "de", "es", "fr", "pt", "ar"]
 default-locale = "en"

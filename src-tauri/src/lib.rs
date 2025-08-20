@@ -340,6 +340,12 @@ pub fn run() {
 
                 let locale = match locale.as_str() {
                     "Türkçe" => "tr",
+                    "Русский" => "ru",
+                    "Español" => "es",
+                    "Português" => "pt",
+                    "Français" => "fr",
+                    "Deutsch" => "de",
+                    "عربي" => "ar",
                     _ => "en",
                 };
 

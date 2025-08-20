@@ -244,7 +244,7 @@ function Settings() {
         className={`opacity-0 border-t-2 ${isDarkMode
           ? "border-[rgba(255,255,255,0.05)]"
           : "border-[rgba(0,0,0,0.05)]"
-          } mt-12 flex flex-col space-y-6 pt-4 w-full h-full`}
+          } mt-12 flex flex-col space-y-6 pt-4 pb-4 w-full h-full`}
       >
         <div className="flex flex-col space-y-6">
           <p
@@ -400,21 +400,27 @@ function Settings() {
                     animate={{ opacity: 1, top: 54 }}
                     exit={{ opacity: 0, top: 40 }}
                     transition={{ type: "spring", duration: 0.2 }}
-                    className={`w-full p-3 absolute ${isDarkMode
-                      ? "bg-darkestgray shadow-xl"
-                      : "bg-gray-200 shadow-lg"
-                      } rounded-lg outline-none focus:outline-none max-h-64 overflow-x-hidden overflow-y-auto ${styles.styledScrollbar
-                      }`}
+                    className={`w-full p-3 absolute 
+                      dark:bg-darkestgray dark:shadow-xl
+                      bg-gray-200 shadow-lg
+                      rounded-lg outline-none focus:outline-none max-h-48 overflow-x-hidden overflow-y-auto 
+                      ${!isDarkMode ? styles.styledScrollbar : styles.styledScrollbar3}`}
                   >
-                    {[{ name: "English" }, { name: "Türkçe" }].map(
+                    {[
+                      { name: "English" },
+                      { name: "Türkçe" },
+                      { name: "Русский" },
+                      { name: "Español" },
+                      { name: "Português" },
+                      { name: "Français" },
+                      { name: "Deutsch" },
+                      { name: "عربي" },
+                    ].map(
                       (item, i) => (
                         <button
                           onClick={() => setLanguageFunction(item)}
                           key={`language_item_${i}`}
-                          className={`p-2 flex w-full ${isDarkMode
-                            ? "hover:bg-blue-600"
-                            : "hover:bg-blue-200"
-                            } flex-row space-x-3 items-center rounded focus:outline-none outline-none`}
+                          className={`p-2 flex w-full dark:hover:bg-blue-600 hover:bg-blue-200 flex-row space-x-3 items-center rounded focus:outline-none outline-none`}
                         >
                           <Flags
                             language={item.name}
